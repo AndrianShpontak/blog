@@ -1,10 +1,10 @@
-var UsersHandler = require('../handlers/users');
-var express = require('express');
-var router = express.Router();
-var usersHandler = new UsersHandler();
-var sessionHelper = require('../helpers/session');
-var checkAuthentication = sessionHelper.checkAuthentication;
-var destroySession = sessionHelper.destroySession;
+const UsersHandler = require('../handlers/users');
+const express = require('express');
+const router = express.Router();
+const usersHandler = new UsersHandler();
+const sessionHelper = require('../helpers/session');
+const checkAuthentication = sessionHelper.checkAuthentication;
+const destroySession = sessionHelper.destroySession;
 
 router.get('/', /*checkAuthentication,*/ usersHandler.getAllUsers);
 
