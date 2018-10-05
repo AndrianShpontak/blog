@@ -1,6 +1,6 @@
 const Session = function () {
     this.checkAuthentication = function (req, res, next) {
-        const error;
+
 
         if (req.session && req.session.userId && req.session.loggedIn) {
             return next();
