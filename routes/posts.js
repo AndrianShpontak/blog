@@ -1,7 +1,7 @@
-var PostsHandler = require('../handlers/posts');
-var express = require('express');
-var router = express.Router();
-var postsHandler = new PostsHandler();
+const PostsHandler = require('../handlers/posts');
+const express = require('express');
+const router = express.Router();
+const postsHandler = new PostsHandler();
 const multer = require("multer");
 
 const storage = multer.diskStorage({
