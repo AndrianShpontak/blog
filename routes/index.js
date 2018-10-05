@@ -1,6 +1,6 @@
-var usersRouter = require('./users');
- var postsRouter = require('./posts');
- var likeDislikeRouter = require('./likeDislike');
+const usersRouter = require('./users');
+const postsRouter = require('./posts');
+const likeDislikeRouter = require('./likeDislike');
 
 
 module.exports = function (app) {
@@ -10,7 +10,7 @@ module.exports = function (app) {
     app.use('/like', likeDislikeRouter)
 
     app.use(function (err, req, res, next) {
-        var status = err.status || 500;
+        const status = err.status || 500;
 
         res.status(status).send(err);
     })
