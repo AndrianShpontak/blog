@@ -12,7 +12,6 @@ router.post('/signUp', usersHandler.signUp);
 router.post('/createModerator', usersHandler.createModerator);
 router.post('/signIn', usersHandler.signIn);
 router.post('/logout', destroySession, usersHandler.logout);
-
 router.post('/', usersHandler.createUser);
 
 router.patch('/:id', checkAuthentication, usersHandler.updateUser);

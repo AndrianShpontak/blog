@@ -3,11 +3,12 @@ const Schema = mongoose.Schema;
 const ObjectId = mongoose.Schema.Types.ObjectId;
 
 const PostsSchema = new Schema({
-    title: String,
+    title: {type: String, required: true},
     body: String,
-    description: String,
-    userId: { type: ObjectId, ref: 'User', default: null }
-}, { collection: 'posts' });
+    date: {type: Date, default: Date.now},
+    description: {type: String, required: true},
+    userId: {type: ObjectId, ref: 'User', default: null}
+}, {collection: 'posts'});
 
 const PostModel = mongoose.model('Post', PostsSchema);
 

@@ -16,10 +16,10 @@ const storage = multer.diskStorage({
 const upload = multer({storage: storage});
 
 router.get('/', postsHandler.getAllPosts);
+
 router.post('/update/:id', postsHandler.updatePost);
-router.delete('/:id', postsHandler.deletePost);
 router.post('/', postsHandler.createPost);
 
-
+router.delete('/:id', postsHandler.deletePost);
 
 module.exports = router;

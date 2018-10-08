@@ -1,5 +1,8 @@
 const UsersModel = require('../models/user');
 const sha256 = require('crypto-js/sha256');
+const SendEmail = require('../helpers/sendEmail');
+
+const sendEmail = new SendEmail();
 
 const UsersHandler = function () {
     this.getAllUsers = function (req, res, next) {
@@ -8,7 +11,7 @@ const UsersHandler = function () {
                 return next(err);
             }
 
-            res.status(200).send({ data: result });
+            res.status(200).send({data: result});
         })
     };
 
@@ -29,19 +32,19 @@ const UsersHandler = function () {
         const body = req.body;
         const id = req.params.id;
 
-        UsersModel.findByIdAndUpdate(id, body, { new: true }, function (err, result) {
+        UsersModel.findByIdAndUpdate(id, body, {new: true}, function (err, result) {
             if (err) {
                 return next(err);
             }
 
-            res.status(201).send({ updated: result });
+            res.status(201).send({updated: result});
         })
     };
 
     this.signUp = function (req, res, next) {
         const body = req.body;
         const role = body.role;
-        const firstName= body.firstName;
+        const firstName = body.firstName;
         const lastName = body.lastName;
         const email = body.email;
         const pass = body.pass;
@@ -52,11 +55,11 @@ const UsersHandler = function () {
         if (!role || !firstName || !lastName || !pass || !email) {
             return next(new Error({message: 'Not found role, or firstName, or lastName, or email, or password'}))
         }
-        if (role !== 3){
+        if (role !== 3) {
             return next(new Error({message: 'You can not create admin or moderator!'}))
         }
 
-        UsersModel.find({ email: email }).count(function (error, count) {
+        UsersModel.find({email: email}).count(function (error, count) {
             if (error) {
                 return next(error);
             }
@@ -90,7 +93,7 @@ const UsersHandler = function () {
 
         cryptedPass = cryptedPass.toString();
 
-        UsersModel.findOne({ email: email, pass: cryptedPass }, function (err, users) {
+        UsersModel.findOne({email: email, pass: cryptedPass}, function (err, users) {
             if (err) {
                 return next(err);
             }
@@ -109,23 +112,43 @@ const UsersHandler = function () {
     this.createModerator = function (req, res, next) {
         const body = req.body;
         body.role = 2;
-        const pass = (new Date).getTime;
+        const pass = (new Date).getTime();
         const cryptedPass = sha256(pass);
 
         body.pass = cryptedPass.toString();
 
         const moderatorModel = new UsersModel(body);
 
-        moderatorModel.save(function (err, result) {
-            if (err) {
-                return next(err);
+        UsersModel.find({email: body.email}).count(function (error, count) {
+            if (error) {
+                return next(error);
+            }
+            if (count) {
+                error = new Error();
+                error.message = 'this moderator already exists';
+
+                error.status = 400;
+
+                return next(error);
             }
 
-            //ToDo send Email
+            moderatorModel.save(function (err, result) {
+                if (err) {
+                    return next(err);
+                }
 
-            res.status(201).send(result);
+                sendEmail.sendMail(result.email, pass.toString(), function (error, result) {
+                    if (error) {
+                        return next(err);
+                    }
+
+                    res.status(201).send(result);
+
+                })
+
+            })
+
         })
-
 
 
     };

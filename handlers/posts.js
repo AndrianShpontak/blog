@@ -54,7 +54,8 @@ const PostsHandler = function () {
             next(err);
         });
 
-    }
+    };
+
     this.deletePost = function (req, res, next) {
         const role = req.session.role;
         const userId = req.session.userId;
@@ -78,8 +79,6 @@ const PostsHandler = function () {
             error.status = 400;
             next(err);
         });
-
-
     }
 
 

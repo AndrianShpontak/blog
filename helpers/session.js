@@ -1,7 +1,5 @@
 const Session = function () {
     this.checkAuthentication = function (req, res, next) {
-
-
         if (req.session && req.session.userId && req.session.loggedIn) {
             return next();
         }
@@ -12,7 +10,7 @@ const Session = function () {
         error.status = 401;
 
         next(error)
-    }
+    };
 
     this.destroySession = function (req, res, next) {
         if (req.session) {

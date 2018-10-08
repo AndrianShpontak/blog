@@ -7,8 +7,6 @@ const UserSchema = new Schema({
     pass: String,
     firstName: String,
     lastName: String,
-
-
 }, {collection: 'users'});
 
 const UserModel = mongoose.model('User', UserSchema);
