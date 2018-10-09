@@ -90,7 +90,7 @@ const UsersHandler = function () {
 
             body.pass = sha256(body.pass);
 
-            var user = new UsersModel(body);
+            const user = new UsersModel(body);
 
             user.save(function (err, result) {
                 if (err) {
