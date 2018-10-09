@@ -121,6 +121,7 @@ const PostsHandler = function () {
                     as: "comments.user"
                 }
             },
+
             {
                 $project: {
                     "userId": 1,
@@ -136,6 +137,7 @@ const PostsHandler = function () {
 
                 }
             },
+
             {
                 $group: {
                     _id: "$_id",
@@ -147,7 +149,8 @@ const PostsHandler = function () {
 
                 }
             },
-        ], function (err, result) {
+        ],
+            function (err, result) {
             if (err) {
                 return next(err);
             }
