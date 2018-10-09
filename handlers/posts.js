@@ -1,4 +1,6 @@
 const PostsModel = require('../models/post');
+const mongoose = require('mongoose');
+const ObjectId = mongoose.Types.ObjectId;
 
 const PostsHandler = function () {
     this.getAllPosts = function (req, res, next) {
@@ -14,19 +16,28 @@ const PostsHandler = function () {
     this.createPost = function (req, res, next) {
         const body = req.body;
         const userId = req.session.userId;
+        const role = req.session.userRole;
         let postModel;
 
         body.userId = userId;
 
         postModel = new PostsModel(body);
 
-        postModel.save(function (err, result) {
-            if (err) {
-                return next(err);
-            }
+        if (role === '3') {
 
-            res.status(201).send(result);
-        })
+            return postModel.save(function (err, result) {
+                if (err) {
+                    return next(err);
+                }
+
+                res.status(201).send(result);
+            })
+        }
+
+        let error = new Error();
+        error.message = 'you can not create post';
+        error.status = 400;
+        next(error);
     };
 
     this.updatePost = function (req, res, next) {
@@ -79,7 +90,71 @@ const PostsHandler = function () {
             error.status = 400;
             next(err);
         });
-    }
+    };
+
+    this.getPostByIdWithComments = function (req, res, next) {
+        const postId = req.params.id;
+
+        PostsModel.aggregate([{
+            $match: {
+                _id: ObjectId(postId)
+            }
+        },
+            {
+                $lookup: {
+                    from: "comments",
+                    localField: "_id",
+                    foreignField: "postId",
+                    as: "comments"
+                }
+            },
+            {
+                $unwind: "$comments"
+
+            },
+
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "comments.userId",
+                    foreignField: "_id",
+                    as: "comments.user"
+                }
+            },
+            {
+                $project: {
+                    "userId": 1,
+                    "title": 1,
+                    "body": 1,
+                    "description": 1,
+                    "date": 1,
+                    "comments": {
+                        text: 1,
+                        date: 1,
+                        "author": {$arrayElemAt: ["$comments.user", 0]}
+                    },
+
+                }
+            },
+            {
+                $group: {
+                    _id: "$_id",
+                    comments:{$push:"$comments"},
+                    "title": {$first:"$title"},
+                    "body": {$first:"$body"},
+                    "description": {$first:"$description"},
+                    "date": {$first:"$date"},
+
+                }
+            },
+        ], function (err, result) {
+            if (err) {
+                return next(err);
+            }
+            res.status(200).send({data: result})
+
+        })
+    };
 
 
 };
