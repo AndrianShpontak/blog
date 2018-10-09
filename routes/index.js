@@ -7,7 +7,7 @@ module.exports = function (app) {
     app.use('/users', usersRouter);
     app.use('/post', postsRouter);
     app.use('/like', likeDislikeRouter);
-    app.use('comment', commentsRouter);
+    app.use('/comment', commentsRouter);
 
     app.use(function (err, req, res, next) {
         const status = err.status || 500;

@@ -17,14 +17,32 @@ const UsersHandler = function () {
 
     this.createUser = function (req, res, next) {
         const body = req.body;
-        const userModel = new UsersModel(body);
 
-        userModel.save(function (err, result) {
-            if (err) {
-                return next(err);
+        body.pass = sha256(body.pass);
+
+        const userModel = new UsersModel(body);
+        const email = body.email;
+
+
+        UsersModel.find({email: email}).count(function (error, count) {
+            if (error) {
+                return next(error);
             }
 
-            res.status(201).send(result);
+            if (count) {
+                const error = new Error();
+                error.message = 'This email is already used';
+                return next(error)
+            }
+
+
+            userModel.save(function (err, result) {
+                if (err) {
+                    return next(err);
+                }
+
+                res.status(201).send(result);
+            })
         })
     };
 
