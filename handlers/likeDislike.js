@@ -1,6 +1,6 @@
 const LikeDislikeModel = require('../models/likeDislike');
 
-const LikeDislikeHandlers = function () {
+const LikeDislikeHandler = function () {
     this.createDeleteLike = function (req, res, next) {
         const userId = req.session.userId;
         const postId = req.params.id;
@@ -32,5 +32,5 @@ const LikeDislikeHandlers = function () {
 
     }
 };
-module.exports = LikeDislikeHandlers;
+module.exports = LikeDislikeHandler;
 

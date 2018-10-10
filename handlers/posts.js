@@ -159,6 +159,45 @@ const PostsHandler = function () {
         })
     };
 
+    this.getPostsWithLike = function (req, res, next) {
+
+        PostsModel.aggregate([{
+            $lookup: {
+                from: "likeDislike",
+                localField: "_id",
+                foreignField: "postId",
+                as: "likeDislike"
+            }
+        },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "userId",
+                    foreignField: "_id",
+                    as: "users",
+
+                }
+            },
+            {
+                $project:{
+                    "title": 1,
+                    "body": 1,
+                    "description": 1,
+                    "date": 1,
+                    "likeDislikes": {$size: "$likeDislike"},
+                    "postAuthor": {$arrayElemAt: ["$users", 0]}
+                }
+            }
+
+        ],function (err, result) {
+                if (err) {
+                    return next(err);
+                }
+                res.status(200).send({data: result})
+
+            })
+    }
+
 
 };
 

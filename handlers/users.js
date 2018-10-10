@@ -171,6 +171,47 @@ const UsersHandler = function () {
 
     };
 
+    this.getUserWithSubscribes = function (req, res, next) {
+
+        UsersModel.aggregate([{
+            $lookup: {
+                from: "subscribers",
+                localField: "subscriberId",
+                foreignField: "_id",
+                as: "subscribers"
+            }
+        }
+        /*,
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "userId",
+                    foreignField: "_id",
+                    as: "users",
+
+                }
+            },
+            {
+                $project:{
+                    "title": 1,
+                    "body": 1,
+                    "description": 1,
+                    "date": 1,
+                    "likeDislikes": {$size: "$likeDislike"},
+                    "postAuthor": {$arrayElemAt: ["$users", 0]}
+                }
+            }
+*/
+        ],function (err, result) {
+            if (err) {
+                return next(err);
+            }
+            res.status(200).send({data: result})
+
+        })
+    };
+
+
     this.logout = function (req, res, next) {
         res.status(200).send({logout: 'success'});
     }

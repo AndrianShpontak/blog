@@ -15,7 +15,8 @@ const storage = multer.diskStorage({
 
 const upload = multer({storage: storage});
 
-router.get('/show/:id', postsHandler.getPostByIdWithComments);
+router.get('/showPostWithComments/:id', postsHandler.getPostByIdWithComments);
+router.get('/showPostsWithLike/:id', postsHandler.getPostsWithLike);
 router.get('/', postsHandler.getAllPosts);
 
 router.post('/update/:id', postsHandler.updatePost);

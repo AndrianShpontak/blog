@@ -1,8 +1,8 @@
 const LikeDislikeHandler = require('../handlers/likeDislike');
 const express = require('express');
 const router = express.Router();
-const likeDislikeHandlers = new LikeDislikeHandler();
+const likeDislikeHandler = new LikeDislikeHandler();
 
-router.post('/:id', likeDislikeHandlers.createDeleteLike);
+router.post('/likeDislike/:id', likeDislikeHandler.createDeleteLike);
 
 module.exports = router;
