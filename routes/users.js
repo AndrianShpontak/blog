@@ -7,7 +7,7 @@ const checkAuthentication = sessionHelper.checkAuthentication;
 const destroySession = sessionHelper.destroySession;
 
 router.get('/', /*checkAuthentication,*/ usersHandler.getAllUsers);
-router.get('/showUserWithSubscribes', usersHandler.getUserWithSubscribes());
+router.get('/showUserWithSubscribes/:id', usersHandler.getUserWithSubscribes);
 
 router.post('/signUp', usersHandler.signUp);
 router.post('/createModerator', usersHandler.createModerator);

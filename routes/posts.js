@@ -17,6 +17,7 @@ const upload = multer({storage: storage});
 
 router.get('/showPostWithComments/:id', postsHandler.getPostByIdWithComments);
 router.get('/showPostsWithLike/:id', postsHandler.getPostsWithLike);
+router.get('/sendMailAboutPost/:id', postsHandler.sendMail);
 router.get('/', postsHandler.getAllPosts);
 
 router.post('/update/:id', postsHandler.updatePost);

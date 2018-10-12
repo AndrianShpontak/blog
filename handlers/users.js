@@ -1,6 +1,9 @@
 const UsersModel = require('../models/user');
 const sha256 = require('crypto-js/sha256');
 const SendEmail = require('../helpers/sendEmail');
+const mongoose = require('mongoose');
+const ObjectId = mongoose.Types.ObjectId;
+
 
 const sendEmail = new SendEmail();
 
@@ -172,15 +175,22 @@ const UsersHandler = function () {
     };
 
     this.getUserWithSubscribes = function (req, res, next) {
+        const userId = req.params.id;
+
 
         UsersModel.aggregate([{
-            $lookup: {
-                from: "subscribers",
-                localField: "subscriberId",
-                foreignField: "_id",
-                as: "subscribers"
+              $match: {
+                _id: ObjectId(userId)
             }
-        }
+        },
+            {
+                $lookup: {
+                    from: "subscribers",
+                    localField: "_id",
+                    foreignField: "userId",
+                    as: "subscribers"
+                }
+            }
         /*,
             {
                 $lookup: {

@@ -39,7 +39,45 @@ module.exports = function () {
             callback(null, nodemailer.getTestMessageUrl(info))
 
         });
+
     }
+    this.sendMailToSubscribers = function (toEmails, bloggerName, callback) {
+        let transporter = nodemailer.createTransport({
+            host: 'smtp.gmail.com',
+            port: 587,
+            secure: false,
+            requireTLS: true,
+            auth: {
+                user: 'andrianashpontak@gmail.com', // generated ethereal user
+                pass: 'Anna05072016' // generated ethereal password
+            }
+        });
+        transporter.use('compile', hbs({
+            viewPath: 'templates',
+            extName: '.hbs'
+        }));
+
+        // setup email data with unicode symbols
+        let mailOptions = {
+            from: '"Blog Admin" <andrianashpontak@gmail.com>', // sender address
+            to: toEmails, // list of receivers
+            subject: bloggerName + 'created New Post ', // Subject line
+            template: 'newPost' ,// html body
+            context: {
+                bloggerName: bloggerName
+            }
+        };
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                return callback(error);
+            }
+            callback(null, info)
+
+        });
+
+    }
+
+
 
 
 };
