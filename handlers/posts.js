@@ -87,7 +87,7 @@ const PostsHandler = function () {
                 return next(err);
             }
             if (result && result.userId.toString() === userId || (role < 3)) {
-                PostsModel.findByIdAndUpdate(postId, {$set: body}, function (err, result) {
+                return PostsModel.findByIdAndUpdate(postId, {$set: body}, function (err, result) {
                     if (err) {
                         return next(err);
                     }
@@ -113,7 +113,7 @@ const PostsHandler = function () {
                 return next(err);
             }
             if (result && result.userId.toString() === userId || (role < 3)) {
-                PostsModel.findByIdAndDelete(postId, function (err, result) {
+                return PostsModel.findByIdAndDelete(postId, function (err, result) {
                     if (err) {
                         return next(err);
                     }
@@ -166,6 +166,7 @@ const PostsHandler = function () {
                         "description": 1,
                         "date": 1,
                         "comments": {
+                            _id: 1,
                             text: 1,
                             date: 1,
                             "author": {$arrayElemAt: ["$comments.user", 0]}
@@ -190,7 +191,7 @@ const PostsHandler = function () {
                 if (err) {
                     return next(err);
                 }
-                res.status(200).send({data: result})
+                res.status(200).send({data: result[0]})
 
             })
     };
@@ -223,6 +224,9 @@ const PostsHandler = function () {
                     "likeDislikes": {$size: "$likeDislike"},
                     "postAuthor": {$arrayElemAt: ["$users", 0]}
                 }
+            },
+            {
+                $sort: { date: -1 }
             }
 
         ], function (err, result) {

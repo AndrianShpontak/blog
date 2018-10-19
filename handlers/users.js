@@ -18,6 +18,16 @@ const UsersHandler = function () {
         })
     };
 
+    this.getCurrentUser = function (req, res, next) {
+        UsersModel.findById(req.session.userId, function (err, user) {
+            if (error) {
+                return next(error);
+            }
+
+            return res.send(user);
+        })
+    };
+
     this.createUser = function (req, res, next) {
         const body = req.body;
 

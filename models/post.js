@@ -4,10 +4,10 @@ const ObjectId = mongoose.Schema.Types.ObjectId;
 
 const PostsSchema = new Schema({
     title: {type: String, required: true},
-    body: String,
+    body: {type: String, required: true},
     date: {type: Date, default: Date.now},
     description: {type: String, required: true},
-    userId: {type: ObjectId, ref: 'User', default: null}
+    userId: {type: ObjectId, ref: 'User', default: null},
 }, {collection: 'posts'});
 
 const PostModel = mongoose.model('Post', PostsSchema);

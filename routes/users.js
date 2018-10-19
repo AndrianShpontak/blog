@@ -8,6 +8,7 @@ const destroySession = sessionHelper.destroySession;
 
 router.get('/', /*checkAuthentication,*/ usersHandler.getAllUsers);
 router.get('/showUserWithSubscribes/:id', usersHandler.getUserWithSubscribes);
+router.get('/currentUser', usersHandler.getCurrentUser);
 
 router.post('/signUp', usersHandler.signUp);
 router.post('/createModerator', usersHandler.createModerator);

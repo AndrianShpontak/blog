@@ -6,7 +6,7 @@ const commentsHandler = new CommentsHandler();
 router.get('/', commentsHandler.getAllComments);
 
 router.post('/update/:id', commentsHandler.updateComment);
-router.post('/:id', commentsHandler.createComment);
+router.post('/:postId', commentsHandler.createComment);
 
 router.delete('/:id', commentsHandler.deleteComment);
 

@@ -14,7 +14,7 @@ const CommentsHandler = function () {
     this.createComment = function (req, res, next) {
         const body = req.body;
         const userId = req.session.userId;
-        const postId = req.params.id;
+        const postId = req.params.postId;
 
         body.userId = userId;
         body.postId = postId;
