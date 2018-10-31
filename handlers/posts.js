@@ -117,6 +117,10 @@ const PostsHandler = function () {
                     if (err) {
                         return next(err);
                     }
+
+                    // find comments by postid and delete all
+                    // then find likedislike where postid of likedislike === postId and
+                    // Lik.find({ postId})
                     res.status(200).send(result);
                 })
 

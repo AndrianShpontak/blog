@@ -19,6 +19,12 @@ const CommentsHandler = function () {
         body.userId = userId;
         body.postId = postId;
 
+        if(!body.text){
+            const error = new Error();
+            error.message = 'Your create is not valid';
+            return next(error)
+        }
+
         commentsModel = new CommentsModel(body);
 
         commentsModel.save(function (err, result) {
