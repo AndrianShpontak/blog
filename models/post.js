@@ -8,6 +8,7 @@ const PostsSchema = new Schema({
     date: {type: Date, default: Date.now},
     description: {type: String, required: true},
     userId: {type: ObjectId, ref: 'User', default: null},
+    comments: [{type:ObjectId, ref: 'Comments'}]
 }, {collection: 'posts'});
 
 const PostModel = mongoose.model('Post', PostsSchema);

@@ -295,8 +295,8 @@ const UsersHandler = function () {
 
         this.deleteUser = function (req, res, next) {
             const userId = req.params.id;
-            const
-            .findByIdAndDelete(userId, function (err) {
+
+            UsersModel.findByIdAndDelete(userId, function (err) {
                 if (err) {
                     return next(err);
                 }

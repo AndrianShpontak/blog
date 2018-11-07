@@ -5,15 +5,43 @@ const ObjectId = mongoose.Types.ObjectId;
 const SendEmail = require('../helpers/sendEmail');
 const sendEmailHelpers = new SendEmail();
 
+
 const PostsHandler = function () {
-    this.getAllPosts = function (req, res, next) {
+    /*this.getAllPosts = function (req, res, next) {
         PostsModel.find({}, function (err, result) {
             if (err) {
                 return next(err);
             }
 
             res.status(200).send({data: result});
+        })*/
+    this.getAllPosts = function (req, res, next) {
+        const page = parseInt(req.query.page);
+        const countPerPage = parseInt(req.query.сountPerPage);
+
+        PostsModel.find().count(function (err,total) {
+            if (err) {
+                return next(err);
+            }
+            PostsModel
+                .aggregate([
+                    {
+                        "$skip": page * countPerPage
+                    },
+                    {
+                        "$limit": countPerPage
+                    },
+
+                ], function (err, result) {
+                    if (err) {
+                        return next(err);
+                    }
+                    res.status(200).send({data: result, total:total})
+
+                })
         })
+
+
     };
 
     this.createPost = function (req, res, next) {
@@ -134,12 +162,15 @@ const PostsHandler = function () {
 
     this.getPostByIdWithComments = function (req, res, next) {
         const postId = req.params.id;
+        const page = parseInt(req.query.page, 10);
+        const countPerPage = parseInt(req.query.countPerPage, 10);
 
-        PostsModel.aggregate([{
-                $match: {
-                    _id: ObjectId(postId)
-                }
-            },
+        PostsModel.aggregate([
+                {
+                    $match: {
+                        _id: ObjectId(postId)
+                    }
+                },
                 {
                     $lookup: {
                         from: "comments",
@@ -175,7 +206,6 @@ const PostsHandler = function () {
                             date: 1,
                             "author": {$arrayElemAt: ["$comments.user", 0]}
                         },
-
                     }
                 },
 
@@ -189,58 +219,75 @@ const PostsHandler = function () {
                         "date": {$first: "$date"},
 
                     }
-                },
+                }
             ],
             function (err, result) {
                 if (err) {
                     return next(err);
                 }
-                res.status(200).send({data: result[0]})
 
+                res.status(200).send({
+                    data: {...result[0], comments: result[0].comments.slice(page * countPerPage, countPerPage)}
+                });
             })
     };
 
     this.getPostsWithLike = function (req, res, next) {
 
-        PostsModel.aggregate([{
-            $lookup: {
-                from: "likeDislike",
-                localField: "_id",
-                foreignField: "postId",
-                as: "likeDislike"
-            }
-        },
-            {
-                $lookup: {
-                    from: "users",
-                    localField: "userId",
-                    foreignField: "_id",
-                    as: "users",
+        const page = parseInt(req.query.page, 10);
+        const countPerPage = parseInt(req.query.countPerPage, 10);
 
-                }
-            },
-            {
-                $project: {
-                    "title": 1,
-                    "body": 1,
-                    "description": 1,
-                    "date": 1,
-                    "likeDislikes": {$size: "$likeDislike"},
-                    "postAuthor": {$arrayElemAt: ["$users", 0]}
-                }
-            },
-            {
-                $sort: { date: -1 }
-            }
-
-        ], function (err, result) {
+        PostsModel.find().count(function (err,total) {
             if (err) {
                 return next(err);
             }
-            res.status(200).send({data: result})
 
+            PostsModel.aggregate([{
+                $lookup: {
+                    from: "likeDislike",
+                    localField: "_id",
+                    foreignField: "postId",
+                    as: "likeDislike"
+                }
+            },
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "userId",
+                        foreignField: "_id",
+                        as: "users",
+
+                    }
+                },
+                {
+                    $project: {
+                        "title": 1,
+                        "body": 1,
+                        "description": 1,
+                        "date": 1,
+                        "likeDislikes": {$size: "$likeDislike"},
+                        "postAuthor": {$arrayElemAt: ["$users", 0]}
+                    }
+                },
+                {
+                    $sort: {date: -1}
+                },
+                {
+                    "$skip": page * countPerPage
+                },
+                {
+                    "$limit": countPerPage
+                }
+
+            ], function (err, result) {
+                if (err) {
+                    return next(err);
+                }
+                res.status(200).send({data: result, total:total})
+
+            })
         })
-    }
+    };
 
 
 };

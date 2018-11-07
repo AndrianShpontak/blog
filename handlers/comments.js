@@ -1,14 +1,35 @@
 const CommentsModel = require('../models/comments');
 
 const CommentsHandler = function () {
-    this.getAllComments = function (req, res, next) {
+    /*this.getAllComments = function (req, res, next) {
         CommentsModel.find({}, function (err, result) {
             if (err) {
                 return next(err);
             }
 
             res.status(200).send({data: result});
-        })
+        })*/
+
+    this.getAllComments = function (req, res, next) {
+        const page = req.query.page;
+        const countPerPage = req.query.CountPerPage;
+
+        CommentsModel
+            .aggregate([
+                {
+                    "$skip": page * countPerPage
+                },
+                {
+                    "$limit": countPerPage
+                },
+
+            ], function (err, result) {
+                if (err) {
+                    return next(err);
+                }
+                res.status(200).send({data: result})
+
+            })
     };
 
     this.createComment = function (req, res, next) {
