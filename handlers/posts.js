@@ -226,8 +226,19 @@ const PostsHandler = function () {
                     return next(err);
                 }
 
-                res.status(200).send({
-                    data: {...result[0], comments: result[0].comments.slice(page * countPerPage, countPerPage)}
+                if (!result || !result.length) {
+                    return res.send({
+                        data: {
+                            comments: []
+                        }
+                    })
+                }
+
+                return res.status(200).send({
+                    data: {
+                        ...result[0],
+                        comments: result[0].comments.slice(page * countPerPage, page * countPerPage + countPerPage)
+                    }
                 });
             })
     };

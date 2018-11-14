@@ -86,26 +86,30 @@ const CommentsHandler = function () {
     this.deleteComment = function (req, res, next) {
         const role = req.session.role;
         const userId = req.session.userId;
-        const postId = req.params.id;
+        //const postId = req.params.id;
+        const commentId = req.params.id;
 
-        PostsModel.findById(postId, function (err, result) {
+       CommentsModel.findById(commentId, function (err, result) {
             if (err) {
                 return next(err);
             }
             if (result && result.userId.toString() === userId || (role < 3)) {
-                PostsModel.findByIdAndDelete(postId, function (err, result) {
+                CommentsModel.findByIdAndDelete(commentId, function (err, result) {
                     if (err) {
                         return next(err);
                     }
                     res.status(200).send(result);
                 })
 
+            } else {
+                let error = new Error();
+                error.message = 'you can not delete';
+                error.status = 400;
+                next(err);
             }
-            let error = new Error();
-            error.message = 'you can not delete';
-            error.status = 400;
-            next(err);
+
         });
+
     }
 
 
