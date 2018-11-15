@@ -3,6 +3,15 @@ const LikeDislikeModel = require('../models/likeDislike');
 const LikeDislikeHandler = function () {
     this.createDeleteLike = function (req, res, next) {
         const userId = req.session.userId;
+
+        if (!userId) {
+            return res.status(400).send({
+                error: {
+                    userId: 'You must be logged in for this'
+                }
+            });
+        }
+
         const postId = req.params.id;
 
         LikeDislikeModel.find({userId: userId, postId: postId}).count(function (error, count) {

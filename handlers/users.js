@@ -259,6 +259,13 @@ const UsersHandler = function () {
         this.getUserWithSubscribes = function (req, res, next) {
             const userId = req.params.id;
             const subscriberId = req.params.id;
+            if (!userId) {
+                return res.status(400).send({
+                    error: {
+                        userId: 'You must be logged in for this'
+                    }
+                });
+            }
 
 
             UsersModel.aggregate([{

@@ -1,5 +1,6 @@
 const PostsModel = require('../models/post');
 const SubscriptionModel = require('../models/subscription');
+const LikeDislikeModel = require('../models/likeDislike');
 const mongoose = require('mongoose');
 const ObjectId = mongoose.Types.ObjectId;
 const SendEmail = require('../helpers/sendEmail');
@@ -18,6 +19,15 @@ const PostsHandler = function () {
     this.getAllPosts = function (req, res, next) {
         const page = parseInt(req.query.page);
         const countPerPage = parseInt(req.query.сountPerPage);
+        const userId = req.session.userId;
+
+        if (!userId) {
+            return res.status(400).send({
+                error: {
+                    userId: 'You must be logged in for this'
+                }
+            });
+        }
 
         PostsModel.find().count(function (err,total) {
             if (err) {
@@ -49,6 +59,14 @@ const PostsHandler = function () {
         const userId = req.session.userId;
         const role = req.session.userRole;
         let postModel;
+
+        if (!userId) {
+            return res.status(400).send({
+                error: {
+                    userId: 'You must be logged in for this'
+                }
+            });
+        }
 
         body.userId = userId;
 
@@ -110,6 +128,14 @@ const PostsHandler = function () {
         const userId = req.session.userId;
         const postId = req.params.id;
 
+        if (!userId) {
+            return res.status(400).send({
+                error: {
+                    userId: 'You must be logged in for this'
+                }
+            });
+        }
+
         PostsModel.findById(postId, function (err, result) {
             if (err) {
                 return next(err);
@@ -135,6 +161,14 @@ const PostsHandler = function () {
         const role = req.session.role;
         const userId = req.session.userId;
         const postId = req.params.id;
+
+        if (!userId) {
+            return res.status(400).send({
+                error: {
+                    userId: 'You must be logged in for this'
+                }
+            });
+        }
 
         PostsModel.findById(postId, function (err, result) {
             if (err) {
@@ -164,6 +198,15 @@ const PostsHandler = function () {
         const postId = req.params.id;
         const page = parseInt(req.query.page, 10);
         const countPerPage = parseInt(req.query.countPerPage, 10);
+        const userId = req.session.userId;
+
+        if (!userId) {
+            return res.status(400).send({
+                error: {
+                    userId: 'You must be logged in for this'
+                }
+            });
+        }
 
         PostsModel.aggregate([
                 {
@@ -247,6 +290,15 @@ const PostsHandler = function () {
 
         const page = parseInt(req.query.page, 10);
         const countPerPage = parseInt(req.query.countPerPage, 10);
+        const userId = req.session.userId;
+
+        if (!userId) {
+            return res.status(400).send({
+                error: {
+                    userId: 'You must be logged in for this'
+                }
+            });
+        }
 
         PostsModel.find().count(function (err,total) {
             if (err) {
@@ -276,7 +328,7 @@ const PostsHandler = function () {
                         "body": 1,
                         "description": 1,
                         "date": 1,
-                        "likeDislikes": {$size: "$likeDislike"},
+                        "likeDislike": 1,//{$size: "$likeDislike"},
                         "postAuthor": {$arrayElemAt: ["$users", 0]}
                     }
                 },
@@ -294,6 +346,7 @@ const PostsHandler = function () {
                 if (err) {
                     return next(err);
                 }
+
                 res.status(200).send({data: result, total:total})
 
             })

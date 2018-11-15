@@ -3,6 +3,6 @@ const express = require('express');
 const router = express.Router();
 const likeDislikeHandler = new LikeDislikeHandler();
 
-router.post('/likeDislike/:id', likeDislikeHandler.createDeleteLike);
+router.post('/:id', likeDislikeHandler.createDeleteLike);
 
 module.exports = router;

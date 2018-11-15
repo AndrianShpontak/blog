@@ -13,6 +13,15 @@ const CommentsHandler = function () {
     this.getAllComments = function (req, res, next) {
         const page = req.query.page;
         const countPerPage = req.query.CountPerPage;
+        const userId = req.session.userId;
+
+        if (!userId) {
+            return res.status(400).send({
+                error: {
+                    userId: 'You must be logged in for this'
+                }
+            });
+        }
 
         CommentsModel
             .aggregate([
