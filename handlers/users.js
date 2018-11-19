@@ -46,6 +46,39 @@ const UsersHandler = function () {
 
         };
 
+        this.getUserById = function (req, res, next) {
+            UsersModel.aggregate([
+                {
+                    $match: {
+                        _id: ObjectId(req.params.id)
+                    }
+                },
+                {
+                    $project: {
+                        email: 1,
+                        firstName: 1,
+                        lastName: 1
+                    }
+                }
+            ], function (err, users) {
+                if (err) {
+                    return next(err);
+                }
+
+                if (!users.length) {
+                    return res.status(404).send(null);
+                }
+
+                SubscriberModel.find({ userId: req.params.id }, function (err, subscribers) {
+                    if (err) {
+                        return next(err);
+                    }
+
+                    return res.send({ ...users[0], subscribers });
+                });
+            });
+        };
+
         this.getCurrentUser = function (req, res, next) {
             UsersModel.aggregate([
                 {
