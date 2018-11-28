@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const ObjectId = mongoose.Types.ObjectId;
 const SendEmail = require('../helpers/sendEmail');
 const sendEmailHelpers = new SendEmail();
+const DestroySession = require('../helpers/session');
 
 
 const PostsHandler = function () {
@@ -17,8 +18,6 @@ const PostsHandler = function () {
             res.status(200).send({data: result});
         })*/
     this.getAllPosts = function (req, res, next) {
-        const page = parseInt(req.query.page);
-        const countPerPage = parseInt(req.query.сountPerPage);
         const userId = req.session.userId;
 
         if (!userId) {
@@ -29,7 +28,7 @@ const PostsHandler = function () {
             });
         }
 
-        PostsModel.find().count(function (err,total) {
+        PostsModel.find().count(function (err, total) {
             if (err) {
                 return next(err);
             }
@@ -46,7 +45,7 @@ const PostsHandler = function () {
                     if (err) {
                         return next(err);
                     }
-                    res.status(200).send({data: result, total:total})
+                    res.status(200).send({data: result, total: total})
 
                 })
         })
@@ -79,7 +78,12 @@ const PostsHandler = function () {
                     return next(err);
                 }
 
-                res.status(201).send(result);
+                sendMailAboutPost(userId, function (err, emailResult) {
+                    if (err) {
+                        return callback(err)
+                    }
+                    res.status(201).send(emailResult);
+                });
             })
         }
 
@@ -98,7 +102,7 @@ const PostsHandler = function () {
             result.forEach(function (element) {
                 str += element.subscriberId.email + ', ';
 
-            })
+            });
             sendEmailHelpers.sendMailToSubscribers(str, result[0].userId.firstName + ' ' + result[0].userId.lastName, function (err, result) {
                 if (err) {
                     return callback(err);
@@ -262,6 +266,12 @@ const PostsHandler = function () {
                         "date": {$first: "$date"},
 
                     }
+                },
+                {
+                    $skip: page * countPerPage
+                },
+                {
+                    $limit: countPerPage
                 }
             ],
             function (err, result) {
@@ -286,6 +296,145 @@ const PostsHandler = function () {
             })
     };
 
+    this.getPostByUserWithComentsAndLikes = function (req, res, next) {
+        const userId = req.params.id;
+        const page = parseInt(req.query.page, 10);
+        const countPerPage = parseInt(req.query.countPerPage, 10);
+
+        PostsModel.aggregate([
+                {
+                    $match: {
+                        userId: ObjectId(userId)
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "subscribers",
+                        localField: "userId",
+                        foreignField: "userId",
+                        as: "subscribers"
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "userId",
+                        foreignField: "_id",
+                        as: "postAuthor"
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "likeDislike",
+                        localField: "_id",
+                        foreignField: "postId",
+                        as: "likes"
+                    }
+                },
+                {
+                    $project: {
+                        "userId": 1,
+                        "title": 1,
+                        "body": 1,
+                        "description": 1,
+                        "date": 1,
+                        "likes": 1,
+                        "subscribers": 1,
+                        "postAuthor": {$arrayElemAt: ["$postAuthor", 0]}
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "comments",
+                        localField: "_id",
+                        foreignField: "postId",
+                        as: "comments"
+                    }
+                },
+                {
+                    $unwind: "$comments"
+
+                },
+
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "comments.userId",
+                        foreignField: "_id",
+                        as: "comments.user"
+                    }
+                },
+
+                {
+                    $project: {
+                        "userId": 1,
+                        "title": 1,
+                        "body": 1,
+                        "description": 1,
+                        "date": 1,
+                        "likes": 1,
+                        "subscribers": 1,
+                        "user": "$postAuthor",
+                        "comments": {
+                            _id: 1,
+                            text: 1,
+                            date: 1,
+                            "author": {$arrayElemAt: ["$comments.user", 0]}
+                        },
+                    }
+                },
+
+                {
+                    $project: {
+                        "userId": 1,
+                        "title": 1,
+                        "body": 1,
+                        "description": 1,
+                        "date": 1,
+                        "likes": 1,
+                        "user": 1,
+                        "subscribers": 1,
+                        "comments": {
+                            _id: 1,
+                            text: 1,
+                            date: 1,
+                            "author": {firstName: 1, lastName: 1},
+                        },
+                    }
+                },
+
+                {
+                    $group: {
+                        _id: "$_id",
+                        comments: {$push: "$comments"},
+                        "user": {$first: "$user"},
+                        "title": {$first: "$title"},
+                        "body": {$first: "$body"},
+                        "description": {$first: "$description"},
+                        "date": {$first: "$date"},
+                        "likes": {$first: "$likes"},
+                        "subscribers": {$first: "$subscribers"}
+
+                    }
+                }, {
+                    $skip: page * countPerPage
+                },
+                {
+                    $limit: countPerPage
+                }
+            ],
+            function (err, result) {
+                if (err) {
+                    return next(err);
+                }
+
+                return res.status(200).send({
+                    data: result
+                });
+            })
+    };
+
+
     this.getPostsWithLike = function (req, res, next) {
 
         const page = parseInt(req.query.page, 10);
@@ -293,26 +442,31 @@ const PostsHandler = function () {
         const userId = req.session.userId;
 
         if (!userId) {
+            DestroySession.destroySession();
+        }
+
+        /*if (!userId) {
             return res.status(400).send({
                 error: {
                     userId: 'You must be logged in for this'
                 }
             });
-        }
+        }*/
 
-        PostsModel.find().count(function (err,total) {
+        PostsModel.find().count(function (err, total) {
             if (err) {
                 return next(err);
             }
 
-            PostsModel.aggregate([{
-                $lookup: {
-                    from: "likeDislike",
-                    localField: "_id",
-                    foreignField: "postId",
-                    as: "likeDislike"
-                }
-            },
+            PostsModel.aggregate([
+                {
+                    $lookup: {
+                        from: "likeDislike",
+                        localField: "_id",
+                        foreignField: "postId",
+                        as: "likeDislike"
+                    }
+                },
                 {
                     $lookup: {
                         from: "users",
@@ -332,6 +486,16 @@ const PostsHandler = function () {
                         "postAuthor": {$arrayElemAt: ["$users", 0]}
                     }
                 },
+                /*{
+                    $project: {
+                        "title": 1,
+                        "body": 1,
+                        "description": 1,
+                        "date": 1,
+                        "likeDislike": 1,//{$size: "$likeDislike"},
+                        "postAuthor": {firstName: 1, lastName: 1}
+                    }
+                },*/
                 {
                     $sort: {date: -1}
                 },
@@ -347,7 +511,7 @@ const PostsHandler = function () {
                     return next(err);
                 }
 
-                res.status(200).send({data: result, total:total})
+                res.status(200).send({data: result, total: total})
 
             })
         })
