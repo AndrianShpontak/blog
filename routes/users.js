@@ -22,7 +22,7 @@ router.post('/createUser', usersHandler.createUser);
 
 router.patch('/:id', checkAuthentication, usersHandler.updateUser);
 
-router.delete('/delete/:id', usersHandler.deleteUser);
+router.delete('/:id', usersHandler.deleteUser);
 
 
 module.exports = router;

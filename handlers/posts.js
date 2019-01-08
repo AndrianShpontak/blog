@@ -5,7 +5,6 @@ const mongoose = require('mongoose');
 const ObjectId = mongoose.Types.ObjectId;
 const SendEmail = require('../helpers/sendEmail');
 const sendEmailHelpers = new SendEmail();
-const DestroySession = require('../helpers/session');
 
 
 const PostsHandler = function () {
@@ -162,7 +161,7 @@ const PostsHandler = function () {
     };
 
     this.deletePost = function (req, res, next) {
-        const role = req.session.role;
+        const role = req.session.userRole;
         const userId = req.session.userId;
         const postId = req.params.id;
 
@@ -255,7 +254,23 @@ const PostsHandler = function () {
                         },
                     }
                 },
-
+                {
+                    $project: {
+                        "userId": 1,
+                        "title": 1,
+                        "body": 1,
+                        "description": 1,
+                        "date": 1,
+                        "likes": 1,
+                        "user": 1,
+                        "comments": {
+                            _id: 1,
+                            text: 1,
+                            date: 1,
+                            "author": {firstName: 1, lastName: 1},
+                        }
+                        },
+                    },
                 {
                     $group: {
                         _id: "$_id",
@@ -266,12 +281,6 @@ const PostsHandler = function () {
                         "date": {$first: "$date"},
 
                     }
-                },
-                {
-                    $skip: page * countPerPage
-                },
-                {
-                    $limit: countPerPage
                 }
             ],
             function (err, result) {
@@ -433,8 +442,6 @@ const PostsHandler = function () {
                 });
             })
     };
-
-
     this.getPostsWithLike = function (req, res, next) {
 
         const page = parseInt(req.query.page, 10);
@@ -442,16 +449,8 @@ const PostsHandler = function () {
         const userId = req.session.userId;
 
         if (!userId) {
-            DestroySession.destroySession();
+            req.session.destroy();
         }
-
-        /*if (!userId) {
-            return res.status(400).send({
-                error: {
-                    userId: 'You must be logged in for this'
-                }
-            });
-        }*/
 
         PostsModel.find().count(function (err, total) {
             if (err) {
@@ -486,7 +485,7 @@ const PostsHandler = function () {
                         "postAuthor": {$arrayElemAt: ["$users", 0]}
                     }
                 },
-                /*{
+                {
                     $project: {
                         "title": 1,
                         "body": 1,
@@ -495,7 +494,7 @@ const PostsHandler = function () {
                         "likeDislike": 1,//{$size: "$likeDislike"},
                         "postAuthor": {firstName: 1, lastName: 1}
                     }
-                },*/
+                },
                 {
                     $sort: {date: -1}
                 },
@@ -510,14 +509,11 @@ const PostsHandler = function () {
                 if (err) {
                     return next(err);
                 }
-
                 res.status(200).send({data: result, total: total})
 
             })
         })
     };
-
-
 };
 
 module.exports = PostsHandler;

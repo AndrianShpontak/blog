@@ -15,6 +15,7 @@
     "multer": "^1.4.0",
     "nodemailer": "^4.6.8",
     "nodemailer-express-handlebars": "^3.0.0",
+    "nodemon": "^1.18.9",
     "react-alert": "^4.0.4",
     "react-alert-template-basic": "^1.0.0"
   },

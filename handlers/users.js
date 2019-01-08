@@ -1,13 +1,12 @@
 const UsersModel = require('../models/user');
 const PostModel = require('../models/post');
 const LikeDislikeModel = require('../models/likeDislike');
-const SubscriberModel = require('../models/subscription')
+const SubscriberModel = require('../models/subscription');
 const sha256 = require('crypto-js/sha256');
 const SendEmail = require('../helpers/sendEmail');
 const sendEmailHelpers = new SendEmail();
 const mongoose = require('mongoose');
 const ObjectId = mongoose.Types.ObjectId;
-const DestroySession = require('../helpers/session');
 
 
 const sendEmail = new SendEmail();
@@ -18,7 +17,6 @@ const UsersHandler = function () {
             if (err) {
                 return next(err);
             }
-
             res.status(200).send({data: result});
         });
     };
@@ -63,8 +61,6 @@ const UsersHandler = function () {
                     lastName: 1,
                     role: 1
                 }
-                //lookup
-                //lookup
             }
         ], function (err, users) {
             if (err) {
@@ -321,20 +317,6 @@ const UsersHandler = function () {
 
         body.pass = sha256(pass);
 
-
-        if (!role || !firstName || !lastName || !pass || !email) {
-            return next({status: 400, message: 'Not found role, or firstName, or lastName, or email, or password'})
-        }
-
-        if (!/\S+@\S+\.\S+/.test(email)) {
-            return next({status: 400, message: "Email is not valid"})
-        }
-        ;
-
-        if (pass.length < 4) {
-            return next({status: 400, message: "Pass is no valid"})
-        }
-
         UsersModel.findOne({email}, function (error, user) {
             if (error) {
                 return next(error);
@@ -360,15 +342,6 @@ const UsersHandler = function () {
     this.updateUser = function (req, res, next) {
         const body = req.body;
         const id = req.params.id;
-        const role = body.role;
-        const firstName = body.firstName;
-        const lastName = body.lastName;
-        const email = body.email;
-        const pass = body.pass;
-
-        if (!role || !firstName || !lastName || !pass || !email) {
-            return next(new Error({message: 'Not found role, or firstName, or lastName, or email, or password'}))
-        }
 
         UsersModel.findByIdAndUpdate(id, body, {new: true}, function (err, result) {
             if (err) {
@@ -381,32 +354,13 @@ const UsersHandler = function () {
 
     this.signUp = function (req, res, next) {
         const body = req.body;
-        const role = body.role;
-        const firstName = body.firstName;
-        const lastName = body.lastName;
         const email = body.email;
-        const pass = body.pass;
-        const err = new Error();
 
-        body.pass = sha256(pass);
-
-
-        if (!role || !firstName || !lastName || !pass || !email) {
-            return next({status: 400, message: 'Not found role, or firstName, or lastName, or email, or password'})
-        }
-        if (role !== 3) {
-            return next({status: 400, message: 'You can not create admin or moderator!'})
+        if ( !body.role ) {
+             body.role = '3'
         }
 
-        if (!/\S+@\S+\.\S+/.test(email)) {
-            return next({status: 400, message: "Email is not valid"})
-        }
-
-        if (pass.length < 4) {
-            return next({status: 400, message: "Pass is no valid"})
-        }
-
-        UsersModel.findOne({email}, function (error, user) {
+         UsersModel.findOne({ email: email }, function (error, user) {
             if (error) {
                 return next(error);
             }
@@ -414,16 +368,23 @@ const UsersHandler = function () {
             if (user) {
                 return next({status: 400, message: 'This email is already used'})
             }
-            const userModel = new UsersModel(body);
 
-            userModel.save(function (err, result) {
-                if (err) {
-                    return next(err);
-                }
+            if(!user){
 
-                res.status(201).send(result);
+                body.pass = sha256(body.pass);
 
-            });
+                const userModel = new UsersModel(body);
+
+                userModel.save(function (err, result) {
+                    if (err) {
+                        return next(err);
+                    }
+
+                    res.status(201).send(result);
+
+                });
+            }
+
         });
     };
 
@@ -439,12 +400,11 @@ const UsersHandler = function () {
             if (err) {
                 return next(err);
             }
-///is pas valid
             if (!users) {
-                // DestroySession.destroySession();
+                req.session.destroy();
                 const error = new Error();
-                error.message = 'You did not have access';
-
+                error.message = 'You do not have access';
+                error.users = users;
                 error.status = 400;
                 return next(error)
             }
@@ -467,8 +427,7 @@ const UsersHandler = function () {
         const cryptedPass = sha256(pass);
 
         body.pass = cryptedPass.toString();
-        body.firstName = 'Moderator';
-        body.lastName = 'Moderator';
+
 
         const moderatorModel = new UsersModel(body);
 
@@ -508,30 +467,39 @@ const UsersHandler = function () {
 
     this.forgotPassword = function (req, res, next) {
         const email = req.body.email;
-        let newPass = (new Date).getTime();
-        const cryptedPass = sha256(newPass);
+        const newPass = (new Date).getTime();
+        let cryptedPass = sha256(newPass.toString());
+        const cryptedPassStr = cryptedPass.toString();
 
-        const pass = cryptedPass.toString();
-
-        UsersModel.find({email: email}).count(function (error, count) {
+        UsersModel.findOne({email: email}, (function (error, users) {
             if (error) {
                 return next(error)
             }
-            if (!count) {
+            if (!users) {
                 error = new Error();
                 error.message = 'There is no user with this email';
                 error.status = 400;
                 return next(error);
             }
 
-            sendEmail.sendMail(email, newPass, function (error, result) {
-                console.log('new pass is all ready');
-                if (error) {
-                    return next(err);
-                }
-                res.status(201).send(result);
-            })
-        })
+            const id = users ? users.id : null;
+            if(id) {
+                UsersModel.findByIdAndUpdate(id, {pass: cryptedPassStr}, function (err, result) {
+                    if (err) {
+                        return next(err);
+                    }
+
+                    sendEmail.sendMail(email, newPass, function (error, res) {
+                        console.log('new pass is all ready');
+                        if (error) {
+                            return next(error);
+                        }
+                        res.status(201).send({updated: result});
+                    })
+                    res.status(201).send({updated: result});
+                });
+            }
+        }))
     };
 
     this.getUserWithSubscribes = function (req, res, next) {
@@ -589,21 +557,20 @@ const UsersHandler = function () {
                 if (err) {
                     return next(err);
                 }
-                LikeDislikeModel.findByIdAndDelete(id, likes, {new: true}, function (err, result) {
+                /*LikeDislikeModel.findByIdAndDelete(id, likes, {new: true}, function (err, result) {
                     if (err) {
                         return next(err);
                     }
                     SubscriberModel.findByIdAndDelete(id, subscriberId, {new: true}, function (err, result) {
-
-
                         if (err) {
                             return next(err);
-                        }
-                        res.status(201).send({isDeleted: result});
+                        }*/
+                let result;
+                res.status(201).send({isDeleted: result});
                     })
                 })
-            })
-        });
+       //     })
+      //  });
     };
 
 
