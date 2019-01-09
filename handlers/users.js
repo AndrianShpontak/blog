@@ -288,7 +288,8 @@ const UsersHandler = function () {
                 $project: {
                     email: 1,
                     firstName: 1,
-                    lastName: 1
+                    lastName: 1,
+                    role:1
                 }
             }
         ], function (err, users) {
@@ -380,10 +381,14 @@ const UsersHandler = function () {
                         return next(err);
                     }
 
-                    res.status(201).send(result);
+                    req.session.userRole = result.role;
+                    req.session.userId = result._id;
+                    req.session.loggedIn = true;
 
+                    res.status(201).send(result);
                 });
             }
+
 
         });
     };
@@ -403,8 +408,7 @@ const UsersHandler = function () {
             if (!users) {
                 req.session.destroy();
                 const error = new Error();
-                error.message = 'You do not have access';
-                error.users = users;
+                error.message = 'There is no user with this email/password';
                 error.status = 400;
                 return next(error)
             }
@@ -455,7 +459,6 @@ const UsersHandler = function () {
                     }
 
                     res.status(200).send(result);
-
                 })
 
             })
@@ -561,7 +564,7 @@ const UsersHandler = function () {
                     if (err) {
                         return next(err);
                     }
-                    SubscriberModel.findByIdAndDelete(id, subscriberId, {new: true}, function (err, result) {
+                    SubscribtionModel.findByIdAndDelete(id, subscriberId, {new: true}, function (err, result) {
                         if (err) {
                             return next(err);
                         }*/

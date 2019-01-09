@@ -8,7 +8,6 @@ const SubscriptionHandler = function () {
         const role = req.session.userRole;
 
 
-        if (role === '3') {
             return SubscriptionModel.find({userId: userId, subscriberId: subscriberId}).count(function (error, count) {
                 if (error) {
                     return next(error);
@@ -36,12 +35,8 @@ const SubscriptionHandler = function () {
                     res.status(201).send(result);
                 })
             })
-        }
-          let error = new Error();
-          error.message = 'you can not subscribe';
-          error.status = 400;
-          next(error);
-        };
+
+    };
 
 };
 

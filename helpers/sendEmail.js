@@ -61,7 +61,7 @@ module.exports = function () {
         let mailOptions = {
             from: '"Blog Admin" <andrianashpontak@gmail.com>', // sender address
             to: toEmails, // list of receivers
-            subject: bloggerName + 'created New Post ', // Subject line
+            subject: bloggerName + ' created New Post ', // Subject line
             template: 'newPost' ,// html body
             context: {
                 bloggerName: bloggerName

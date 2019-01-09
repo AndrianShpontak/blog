@@ -58,14 +58,6 @@ const PostsHandler = function () {
         const role = req.session.userRole;
         let postModel;
 
-        if (!userId) {
-            return res.status(400).send({
-                error: {
-                    userId: 'You must be logged in for this'
-                }
-            });
-        }
-
         body.userId = userId;
 
         postModel = new PostsModel(body);
@@ -81,35 +73,39 @@ const PostsHandler = function () {
                     if (err) {
                         return callback(err)
                     }
-                    res.status(201).send(emailResult);
                 });
+
+                res.status(201).send(result);
             })
+
         }
 
-        let error = new Error();
-        error.message = 'you can not create post';
-        error.status = 400;
-        next(error);
     };
 
     let sendMailAboutPost = function (userId, callback) {
-        SubscriptionModel.find({userId: userId}).populate('subscriberId').populate('userId').exec(function (err, result) {
-            if (err) {
-                return callback(err);
-            }
-            let str = '';
-            result.forEach(function (element) {
-                str += element.subscriberId.email + ', ';
-
-            });
-            sendEmailHelpers.sendMailToSubscribers(str, result[0].userId.firstName + ' ' + result[0].userId.lastName, function (err, result) {
+        SubscriptionModel
+            .find({userId: userId})
+            .populate('subscriberId')
+            .populate('userId')
+            .exec(function (err, users) {
                 if (err) {
                     return callback(err);
-
                 }
-                callback(null, result)
 
-            })
+                if (!users.length) {
+                    return false;
+                }
+
+                const mailBody = users.map(u => u.subscriberId.email).join(', ');
+
+                sendEmailHelpers.sendMailToSubscribers(mailBody, users[0].userId.firstName + ' ' + users[0].userId.lastName, function (err, result) {
+                    if (err) {
+                        return callback(err);
+
+                    }
+
+                    callback(null, result);
+                })
         })
 
     };
@@ -130,14 +126,6 @@ const PostsHandler = function () {
         const role = req.session.role;
         const userId = req.session.userId;
         const postId = req.params.id;
-
-        if (!userId) {
-            return res.status(400).send({
-                error: {
-                    userId: 'You must be logged in for this'
-                }
-            });
-        }
 
         PostsModel.findById(postId, function (err, result) {
             if (err) {
@@ -450,6 +438,7 @@ const PostsHandler = function () {
 
         if (!userId) {
             req.session.destroy();
+            return res.status(401).json({ error: 'you have no access'  });
         }
 
         PostsModel.find().count(function (err, total) {
