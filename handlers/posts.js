@@ -55,7 +55,7 @@ const PostsHandler = function () {
     this.createPost = function (req, res, next) {
         const body = req.body;
         const userId = req.session.userId;
-        const role = req.session.userRole;
+        const role = req.session.role;
         let postModel;
 
         body.userId = userId;
