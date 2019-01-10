@@ -151,7 +151,7 @@ const UsersHandler = function () {
                 },
                 {
                     $unwind: {
-                        path:"$posts.comments",
+                        path: "$posts.comments",
                         preserveNullAndEmptyArrays: true
                     }
                 },
@@ -289,7 +289,7 @@ const UsersHandler = function () {
                     email: 1,
                     firstName: 1,
                     lastName: 1,
-                    role:1
+                    role: 1
                 }
             }
         ], function (err, users) {
@@ -344,12 +344,33 @@ const UsersHandler = function () {
         const body = req.body;
         const id = req.params.id;
 
-        UsersModel.findByIdAndUpdate(id, body, {new: true}, function (err, result) {
+        if (id !== req.session.userId) {
+            res.status(401).json('you cannot update')
+        }
+
+        UsersModel.findById(id, function (err, result) {
             if (err) {
                 return next(err);
             }
 
-            res.status(201).send({updated: result});
+
+            if(!body.newPass){
+                if (result.pass !== sha256(body.pass)) {
+                    res.status(401).json({password: 'pass is incorrect'})
+                }
+                body.pass = body.newPass;
+
+                delete body.newPass;
+            }
+
+
+
+            UsersModel.findByIdAndUpdate(id, body, function (err, result) {
+                if (err) {
+                    return next(err);
+                }
+                res.status(201).send({updated: result});
+            })
         })
     };
 
@@ -357,11 +378,11 @@ const UsersHandler = function () {
         const body = req.body;
         const email = body.email;
 
-        if ( !body.role ) {
-             body.role = '3'
+        if (!body.role) {
+            body.role = '3'
         }
 
-         UsersModel.findOne({ email: email }, function (error, user) {
+        UsersModel.findOne({email: email}, function (error, user) {
             if (error) {
                 return next(error);
             }
@@ -370,7 +391,7 @@ const UsersHandler = function () {
                 return next({status: 400, message: 'This email is already used'})
             }
 
-            if(!user){
+            if (!user) {
 
                 body.pass = sha256(body.pass);
 
@@ -486,7 +507,7 @@ const UsersHandler = function () {
             }
 
             const id = users ? users.id : null;
-            if(id) {
+            if (id) {
                 UsersModel.findByIdAndUpdate(id, {pass: cryptedPassStr}, function (err, result) {
                     if (err) {
                         return next(err);
@@ -504,6 +525,7 @@ const UsersHandler = function () {
             }
         }))
     };
+
 
     this.getUserWithSubscribes = function (req, res, next) {
         const userId = req.params.id;
@@ -570,10 +592,10 @@ const UsersHandler = function () {
                         }*/
                 let result;
                 res.status(201).send({isDeleted: result});
-                    })
-                })
-       //     })
-      //  });
+            })
+        })
+        //     })
+        //  });
     };
 
 
