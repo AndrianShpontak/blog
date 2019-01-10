@@ -79,7 +79,7 @@ const PostsHandler = function () {
             })
 
         }
-
+            return res.status(400).send('you cannot create post')
     };
 
     let sendMailAboutPost = function (userId, callback) {
