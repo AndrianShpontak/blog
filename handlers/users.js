@@ -345,7 +345,7 @@ const UsersHandler = function () {
         const id = req.params.id;
 
         if (id !== req.session.userId) {
-            res.status(401).json('you cannot update')
+            return res.status(401).json('you cannot update')
         }
 
         UsersModel.findById(id, function (err, result) {
@@ -353,23 +353,26 @@ const UsersHandler = function () {
                 return next(err);
             }
 
-
-            if(!body.newPass){
-                if (result.pass !== sha256(body.pass)) {
-                    res.status(401).json({password: 'pass is incorrect'})
+            if (body.newPass){
+                if (result.pass !== sha256(body.pass).toString()) {
+                    return res.status(401).json({password: 'pass is incorrect'})
                 }
-                body.pass = body.newPass;
+
+                body.pass = sha256(body.newPass);
 
                 delete body.newPass;
             }
 
 
 
-            UsersModel.findByIdAndUpdate(id, body, function (err, result) {
+            UsersModel.findByIdAndUpdate(id, body, { new: true }, function (err, result) {
                 if (err) {
                     return next(err);
                 }
-                res.status(201).send({updated: result});
+
+                let { pass, ...rest } = result.toObject();
+
+                return res.status(201).send({ updated: rest });
             })
         })
     };
@@ -508,7 +511,7 @@ const UsersHandler = function () {
 
             const id = users ? users.id : null;
             if (id) {
-                UsersModel.findByIdAndUpdate(id, {pass: cryptedPassStr}, function (err, result) {
+                UsersModel.findByIdAndUpdate(id, {pass: cryptedPassStr},{new:true}, function (err, result) {
                     if (err) {
                         return next(err);
                     }
