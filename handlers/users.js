@@ -7,6 +7,7 @@ const SendEmail = require('../helpers/sendEmail');
 const sendEmailHelpers = new SendEmail();
 const mongoose = require('mongoose');
 const ObjectId = mongoose.Types.ObjectId;
+const bcypt = require('bcrypt');
 
 
 const sendEmail = new SendEmail();
@@ -316,27 +317,38 @@ const UsersHandler = function () {
             lastName
         } = body;
 
-        body.pass = sha256(pass);
 
-        UsersModel.findOne({email}, function (error, user) {
-            if (error) {
-                return next(error);
+        //  body.pass = sha256(pass);
+        body.pass = bcypt.hash('body.pass', 10, function (err, hash) {
+            if (err) {
+                return next(err);
             }
+            body.pass = hash;
+            next();
 
-            if (user) {
-                return next({status: 400, message: 'This email is already used'})
-            }
-            const userModel = new UsersModel(body);
-
-            userModel.save(function (err, result) {
-                if (err) {
-                    return next(err);
+            UsersModel.findOne({email}, function (error, user) {
+                if (error) {
+                    return next(error);
                 }
 
-                res.status(201).send(result);
+                if (user) {
+                    return next({status: 400, message: 'This email is already used'})
+                }
+                const userModel = new UsersModel(body);
 
+                userModel.save(function (err, result) {
+                    if (err) {
+                        return next(err);
+                    }
+
+                    res.status(201).send(result);
+
+                });
             });
+            res.status(201).send(body);
+
         });
+
     };
 
 
@@ -353,7 +365,7 @@ const UsersHandler = function () {
                 return next(err);
             }
 
-            if (body.newPass){
+            if (body.newPass) {
                 if (result.pass !== sha256(body.pass).toString()) {
                     return res.status(401).json({password: 'pass is incorrect'})
                 }
@@ -364,15 +376,14 @@ const UsersHandler = function () {
             }
 
 
-
-            UsersModel.findByIdAndUpdate(id, body, { new: true }, function (err, result) {
+            UsersModel.findByIdAndUpdate(id, body, {new: true}, function (err, result) {
                 if (err) {
                     return next(err);
                 }
 
-                let { pass, ...rest } = result.toObject();
+                let {pass, ...rest} = result.toObject();
 
-                return res.status(201).send({ updated: rest });
+                return res.status(201).send({updated: rest});
             })
         })
     };
@@ -396,7 +407,15 @@ const UsersHandler = function () {
 
             if (!user) {
 
-                body.pass = sha256(body.pass);
+                //  body.pass = sha256(body.pass);
+
+                body.pass = bcrypt.hash('body.pass', 10, function (err, hash) {
+                    if (err) {
+                        return next(err);
+                    }
+                    body.pass = hash;
+                    next();
+                });
 
                 const userModel = new UsersModel(body);
 
@@ -511,7 +530,7 @@ const UsersHandler = function () {
 
             const id = users ? users.id : null;
             if (id) {
-                UsersModel.findByIdAndUpdate(id, {pass: cryptedPassStr},{new:true}, function (err, result) {
+                UsersModel.findByIdAndUpdate(id, {pass: cryptedPassStr}, {new: true}, function (err, result) {
                     if (err) {
                         return next(err);
                     }
