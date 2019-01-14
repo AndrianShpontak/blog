@@ -436,10 +436,10 @@ const PostsHandler = function () {
         const countPerPage = parseInt(req.query.countPerPage, 10);
         const userId = req.session.userId;
 
-        if (!userId) {
+       /* if (!userId) {
             req.session.destroy();
             return res.status(401).json({ error: 'you have no access'  });
-        }
+        }*/
 
         PostsModel.find().count(function (err, total) {
             if (err) {

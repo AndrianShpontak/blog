@@ -7,8 +7,7 @@ const SendEmail = require('../helpers/sendEmail');
 const sendEmailHelpers = new SendEmail();
 const mongoose = require('mongoose');
 const ObjectId = mongoose.Types.ObjectId;
-const bcypt = require('bcrypt');
-
+const bcrypt = require('bcryptjs');
 
 const sendEmail = new SendEmail();
 
@@ -309,6 +308,7 @@ const UsersHandler = function () {
     this.createUser = function (req, res, next) {
         const body = req.body;
 
+
         const {
             email,
             pass,
@@ -316,15 +316,14 @@ const UsersHandler = function () {
             firstName,
             lastName
         } = body;
-
-
         //  body.pass = sha256(pass);
-        body.pass = bcypt.hash('body.pass', 10, function (err, hash) {
+
+        bcrypt.hash(body.pass, 10, function (err, hash) {
             if (err) {
                 return next(err);
             }
+
             body.pass = hash;
-            next();
 
             UsersModel.findOne({email}, function (error, user) {
                 if (error) {
@@ -332,8 +331,9 @@ const UsersHandler = function () {
                 }
 
                 if (user) {
-                    return next({status: 400, message: 'This email is already used'})
+                    return next({ status: 400, message: 'This email is already used' })
                 }
+
                 const userModel = new UsersModel(body);
 
                 userModel.save(function (err, result) {
@@ -341,14 +341,10 @@ const UsersHandler = function () {
                         return next(err);
                     }
 
-                    res.status(201).send(result);
-
+                  return res.status(201).send(result);
                 });
             });
-            res.status(201).send(body);
-
         });
-
     };
 
 
@@ -402,37 +398,34 @@ const UsersHandler = function () {
             }
 
             if (user) {
-                return next({status: 400, message: 'This email is already used'})
+                return next({ status: 400, message: 'This email is already used' })
             }
 
             if (!user) {
-
                 //  body.pass = sha256(body.pass);
 
-                body.pass = bcrypt.hash('body.pass', 10, function (err, hash) {
+                bcrypt.hash(body.pass, 10, function (err, hash) {
                     if (err) {
                         return next(err);
                     }
+
                     body.pass = hash;
-                    next();
-                });
 
-                const userModel = new UsersModel(body);
+                    const userModel = new UsersModel(body);
 
-                userModel.save(function (err, result) {
-                    if (err) {
-                        return next(err);
-                    }
+                    return userModel.save(function (err, result) {
+                        if (err) {
+                            return next(err);
+                        }
 
-                    req.session.userRole = result.role;
-                    req.session.userId = result._id;
-                    req.session.loggedIn = true;
+                        req.session.userRole = result.role;
+                        req.session.userId = result._id;
+                        req.session.loggedIn = true;
 
-                    res.status(201).send(result);
+                        res.json(result);
+                    });
                 });
             }
-
-
         });
     };
 
