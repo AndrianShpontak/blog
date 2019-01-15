@@ -331,7 +331,7 @@ const UsersHandler = function () {
                 }
 
                 if (user) {
-                    return next({ status: 400, message: 'This email is already used' })
+                    return next({status: 400, message: 'This email is already used'})
                 }
 
                 const userModel = new UsersModel(body);
@@ -341,7 +341,7 @@ const UsersHandler = function () {
                         return next(err);
                     }
 
-                  return res.status(201).send(result);
+                    return res.status(201).send(result);
                 });
             });
         });
@@ -398,33 +398,33 @@ const UsersHandler = function () {
             }
 
             if (user) {
-                return next({ status: 400, message: 'This email is already used' })
+                return next({status: 400, message: 'This email is already used'})
             }
 
             if (!user) {
                 //  body.pass = sha256(body.pass);
 
-                bcrypt.hash(body.pass, 10, function (err, hash) {
+                /* bcrypt.hash(body.pass, 10, function (err, hash) {
+                     if (err) {
+                         return next(err);
+                     }
+
+                     body.pass = hash;*/
+
+                const userModel = new UsersModel(body);
+
+                return userModel.save(function (err, result) {
                     if (err) {
                         return next(err);
                     }
 
-                    body.pass = hash;
+                    req.session.userRole = result.role;
+                    req.session.userId = result._id;
+                    req.session.loggedIn = true;
 
-                    const userModel = new UsersModel(body);
-
-                    return userModel.save(function (err, result) {
-                        if (err) {
-                            return next(err);
-                        }
-
-                        req.session.userRole = result.role;
-                        req.session.userId = result._id;
-                        req.session.loggedIn = true;
-
-                        res.json(result);
-                    });
+                    res.json(result);
                 });
+                //  });
             }
         });
     };
@@ -433,14 +433,28 @@ const UsersHandler = function () {
         const body = req.body;
         const email = body.email;
         const pass = body.pass;
-        let cryptedPass = sha256(pass);
+        /* let cryptedPass = sha256(pass);
 
-        cryptedPass = cryptedPass.toString();
+         cryptedPass = cryptedPass.toString();
 
-        UsersModel.findOne({email: email, pass: cryptedPass}, function (err, users) {
+         UsersModel.findOne({email: email, pass: cryptedPass}, function (err, users) {
+             if (err) {
+                 return next(err);
+             }*/
+
+
+        /* bcrypt.hash(body.pass, 10, function (err, hash) {
+             if (err) {
+                 return next(err);
+             }
+             body.pass = hash;*/
+
+        UsersModel.findOne({email: email}, function (err, users) {
             if (err) {
                 return next(err);
             }
+
+
             if (!users) {
                 req.session.destroy();
                 const error = new Error();
@@ -449,15 +463,19 @@ const UsersHandler = function () {
                 return next(error)
             }
 
-            if (users && users._id) {
-                req.session.userRole = users.role;
-                req.session.userId = users._id;
-                req.session.loggedIn = true;
-            }
+            users.comparePassword(pass, function (err, isMatch) {
+                if (isMatch && isMatch === true) {
+                    req.session.userRole = users.role;
+                    req.session.userId = users._id;
+                    req.session.loggedIn = true;
+                    res.status(200).send(users)
 
-            res.status(200).send(users)
+                }
+                else {
+                    return res.status(401).send();
+                }
+            });
         })
-
     };
 
     this.createModerator = function (req, res, next) {
