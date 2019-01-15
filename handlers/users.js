@@ -7,7 +7,7 @@ const SendEmail = require('../helpers/sendEmail');
 const sendEmailHelpers = new SendEmail();
 const mongoose = require('mongoose');
 const ObjectId = mongoose.Types.ObjectId;
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcrypt');
 
 const sendEmail = new SendEmail();
 
@@ -449,7 +449,7 @@ const UsersHandler = function () {
              }
              body.pass = hash;*/
 
-        UsersModel.findOne({email: email}, function (err, users) {
+        UsersModel.findOne({email: email, pass: pass}, function (err, users) {
             if (err) {
                 return next(err);
             }
@@ -471,9 +471,8 @@ const UsersHandler = function () {
                     res.status(200).send(users)
 
                 }
-                else {
+                else
                     return res.status(401).send();
-                }
             });
         })
     };
