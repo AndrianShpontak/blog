@@ -375,21 +375,29 @@ const UsersHandler = function () {
                         body.pass = hash;
 
                         delete body.newPass;
+
+                        return UsersModel.findByIdAndUpdate(id, body, {new: true}, function (err, result) {
+                            if (err) {
+                                return next(err);
+                            }
+
+                            let {pass, ...rest} = result.toObject();
+
+                            return res.status(201).send({updated: rest});
+                        });
                     });
                 });
+            } else {
+                UsersModel.findByIdAndUpdate(id, body, {new: true}, function (err, result) {
+                    if (err) {
+                        return next(err);
+                    }
+
+                    let {pass, ...rest} = result.toObject();
+
+                    return res.status(201).send({updated: rest});
+                });
             }
-
-
-            UsersModel.findByIdAndUpdate(id, body, {new: true}, function (err, result) {
-                if (err) {
-                    return next(err);
-                }
-
-                let {pass, ...rest} = result.toObject();
-
-            });
-            return res.status(201).send({updated: rest});
-
         })
     };
 
