@@ -318,31 +318,30 @@ const UsersHandler = function () {
         } = body;
         //  body.pass = sha256(pass);
 
-        bcrypt.hash(body.pass, 10, function (err, hash) {
+        /*bcrypt.hash(body.pass, 10, function (err, hash) {
             if (err) {
                 return next(err);
             }
 
-            body.pass = hash;
+            body.pass = hash;*/
 
-            UsersModel.findOne({email}, function (error, user) {
-                if (error) {
-                    return next(error);
+        UsersModel.findOne({email}, function (error, user) {
+            if (error) {
+                return next(error);
+            }
+
+            if (user) {
+                return next({status: 400, message: 'This email is already used'})
+            }
+
+            const userModel = new UsersModel(body);
+
+            userModel.save(function (err, result) {
+                if (err) {
+                    return next(err);
                 }
 
-                if (user) {
-                    return next({status: 400, message: 'This email is already used'})
-                }
-
-                const userModel = new UsersModel(body);
-
-                userModel.save(function (err, result) {
-                    if (err) {
-                        return next(err);
-                    }
-
-                    return res.status(201).send(result);
-                });
+                return res.status(201).send(result);
             });
         });
     };
@@ -362,13 +361,22 @@ const UsersHandler = function () {
             }
 
             if (body.newPass) {
-                if (result.pass !== sha256(body.pass).toString()) {
-                    return res.status(401).json({password: 'pass is incorrect'})
-                }
+                result.comparePassword(body.pass, function (err, isMatch) {
+                    if (!isMatch) {
+                        return res.status(401).json({pass: 'pass is incorrect'})
+                    }
 
-                body.pass = sha256(body.newPass);
 
-                delete body.newPass;
+                    bcrypt.hash(body.newPass, 10, function (err, hash) {
+                        if (err) {
+                            return next(err);
+                        }
+
+                        body.pass = hash;
+
+                        delete body.newPass;
+                    });
+                });
             }
 
 
@@ -379,8 +387,9 @@ const UsersHandler = function () {
 
                 let {pass, ...rest} = result.toObject();
 
-                return res.status(201).send({updated: rest});
-            })
+            });
+            return res.status(201).send({updated: rest});
+
         })
     };
 
@@ -449,7 +458,7 @@ const UsersHandler = function () {
              }
              body.pass = hash;*/
 
-        UsersModel.findOne({email: email, pass: pass}, function (err, users) {
+        UsersModel.findOne({email: email}, function (err, users) {
             if (err) {
                 return next(err);
             }
@@ -464,7 +473,7 @@ const UsersHandler = function () {
             }
 
             users.comparePassword(pass, function (err, isMatch) {
-                if (isMatch && isMatch === true) {
+                if (isMatch) {
                     req.session.userRole = users.role;
                     req.session.userId = users._id;
                     req.session.loggedIn = true;
@@ -523,39 +532,45 @@ const UsersHandler = function () {
 
     this.forgotPassword = function (req, res, next) {
         const email = req.body.email;
-        const newPass = (new Date).getTime();
-        let cryptedPass = sha256(newPass.toString());
-        const cryptedPassStr = cryptedPass.toString();
+        let newPass = (new Date).getTime().toString();
+        /*  let cryptedPass = sha256(newPass.toString());
+          const cryptedPassStr = cryptedPass.toString();*/
 
-        UsersModel.findOne({email: email}, (function (error, users) {
-            if (error) {
-                return next(error)
+        bcrypt.hash(newPass, 10, function (err, hash) {
+            if (err) {
+                return next(err);
             }
-            if (!users) {
-                error = new Error();
-                error.message = 'There is no user with this email';
-                error.status = 400;
-                return next(error);
-            }
+            const cryptedPass = hash;
 
-            const id = users ? users.id : null;
-            if (id) {
-                UsersModel.findByIdAndUpdate(id, {pass: cryptedPassStr}, {new: true}, function (err, result) {
-                    if (err) {
-                        return next(err);
-                    }
+            UsersModel.findOne({email: email}, (function (error, users) {
+                if (error) {
+                    return next(error)
+                }
+                if (!users) {
+                    error = new Error();
+                    error.message = 'There is no user with this email';
+                    error.status = 400;
+                    return next(error);
+                }
 
-                    sendEmail.sendMail(email, newPass, function (error, res) {
-                        console.log('new pass is all ready');
-                        if (error) {
-                            return next(error);
+                const id = users ? users.id : null;
+                if (id) {
+                    UsersModel.findByIdAndUpdate(id, {pass: cryptedPass}, {new: true}, function (err, result) {
+                        if (err) {
+                            return next(err);
                         }
-                        res.status(201).send({updated: result});
-                    })
-                    res.status(201).send({updated: result});
-                });
-            }
-        }))
+
+                        sendEmail.sendMail(email, newPass, function (error, res) {
+                            console.log('new pass is all ready');
+                            if (error) {
+                                return next(error);
+                            }
+                            res.status(201).send({updated: result});
+                        })
+                    });
+                }
+            }))
+        })
     };
 
 
