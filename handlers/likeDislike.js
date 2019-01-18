@@ -25,7 +25,7 @@ const LikeDislikeHandler = function () {
                         return next(err);
                     }
 
-                    res.status(200).send(result);
+                    res.status(200).send({'message':'You disliked this post!'});
 
                 })
             }
@@ -36,7 +36,7 @@ const LikeDislikeHandler = function () {
                     return next(err);
                 }
 
-                res.status(201).send(result);
+                res.status(201).send({'message':'You liked this post!'});
             })
         })
 

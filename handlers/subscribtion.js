@@ -21,7 +21,7 @@ const SubscriptionHandler = function () {
                         if (err) {
                             return next(err);
                         }
-                        res.status(200).send(result);
+                        res.status(200).send({'message':'you have unsubscribed to this user!'});
 
                     })
                 }
@@ -32,7 +32,7 @@ const SubscriptionHandler = function () {
                         return next(err);
                     }
 
-                    res.status(201).send(result);
+                    res.status(201).send({'message':'you have subscribed to this user!'});
                 })
             })
 

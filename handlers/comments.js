@@ -107,7 +107,7 @@ const CommentsHandler = function () {
                     if (err) {
                         return next(err);
                     }
-                    res.status(200).send(result);
+                    res.status(200).send({"message": "Comment is deleted"});
                 })
 
             } else {

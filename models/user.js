@@ -53,8 +53,12 @@ UserSchema.pre('save', function (next) {
 });
 
 UserSchema.pre('update', function (next) {
-    
-})
+    const user = this;
+
+    if(user.isModified('pass')){
+
+    }
+});
 
 UserSchema.methods.comparePassword = function (candidatePass, cb) {
     bcrypt.compare(candidatePass, this.pass, function (err, isMatch) {
