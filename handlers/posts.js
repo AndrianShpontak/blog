@@ -1,4 +1,5 @@
 const PostsModel = require('../models/post');
+const UserModel = require('../models/user')
 const SubscriptionModel = require('../models/subscription');
 const LikeDislikeModel = require('../models/likeDislike');
 const mongoose = require('mongoose');
@@ -8,15 +9,16 @@ const sendEmailHelpers = new SendEmail();
 
 
 const PostsHandler = function () {
-    /*this.getAllPosts = function (req, res, next) {
+    this.getAllPosts = function (req, res, next) {
         PostsModel.find({}, function (err, result) {
             if (err) {
                 return next(err);
             }
 
             res.status(200).send({data: result});
-        })*/
-    this.getAllPosts = function (req, res, next) {
+        })
+    };
+/*    this.getAllPosts = function (req, res, next) {
         const userId = req.session.userId;
 
         if (!userId) {
@@ -50,12 +52,12 @@ const PostsHandler = function () {
         })
 
 
-    };
+    };*/
 
     this.createPost = function (req, res, next) {
         const body = req.body;
         const userId = req.session.userId;
-        const role = req.session.role;
+        const role = req.session.userRole;
         let postModel;
 
         body.userId = userId;
@@ -174,7 +176,7 @@ const PostsHandler = function () {
                     // find comments by postid and delete all
                     // then find likedislike where postid of likedislike === postId and
                     // Lik.find({ postId})
-                    res.status(200).send(result);
+                    res.status(200).send({delete : true});
                 })
 
             }

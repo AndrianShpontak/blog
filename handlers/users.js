@@ -325,24 +325,32 @@ const UsersHandler = function () {
 
             body.pass = hash;*/
 
+        if (!body.role) {
+            body.role = '3'
+        }
+
+        if (body.role < "3") {
+            return next({status: 401, message: 'You can not create admin or moderator'})
+        }
+
         UsersModel.findOne({email}, function (error, user) {
             if (error) {
                 return next(error);
             }
 
             if (user) {
-                return next({status: 400, message: 'This email is already used'})
+                return next({status: 409, message: 'This email is already used'})
             }
 
             const userModel = new UsersModel(body);
 
-            userModel.save(function (err, result) {
-                if (err) {
-                    return next(err);
-                }
+                return userModel.save(function (err, result) {
+                    if (err) {
+                        return next(err);
+                    }
 
-                return res.status(201).send(result);
-            });
+                    return res.status(201).send(result);
+                });
         });
     };
 
@@ -363,7 +371,7 @@ const UsersHandler = function () {
             if (body.newPass) {
                 result.comparePassword(body.pass, function (err, isMatch) {
                     if (!isMatch) {
-                        return res.status(401).json({pass: 'pass is incorrect'})
+                        return res.status(409).json({pass: 'pass is does not match, please enter correct pass!'})
                     }
 
 
@@ -408,43 +416,46 @@ const UsersHandler = function () {
         if (!body.role) {
             body.role = '3'
         }
+        if (body.role < "3") {
+            return next({status: 401, message: 'You can not sign up as admin or moderator'})
+        }
 
         UsersModel.findOne({email: email}, function (error, user) {
-            if (error) {
-                return next(error);
-            }
+                if (error) {
+                    return next(error);
+                }
 
-            if (user) {
-                return next({status: 400, message: 'This email is already used'})
-            }
+                if (user) {
+                    return next({status: 409, message: 'This email is already used'})
+                }
 
-            if (!user) {
-                //  body.pass = sha256(body.pass);
+                if (!user) {
+                    //  body.pass = sha256(body.pass);
 
-                /* bcrypt.hash(body.pass, 10, function (err, hash) {
-                     if (err) {
-                         return next(err);
-                     }
+                    /* bcrypt.hash(body.pass, 10, function (err, hash) {
+                         if (err) {
+                             return next(err);
+                         }
 
-                     body.pass = hash;*/
+                         body.pass = hash;*/
 
-                const userModel = new UsersModel(body);
+                    const userModel = new UsersModel(body);
 
-                return userModel.save(function (err, result) {
-                    if (err) {
-                        return next(err);
-                    }
+                    return userModel.save(function (err, result) {
+                        if (err) {
+                            return next(err);
+                        }
 
-                    req.session.userRole = result.role;
-                    req.session.userId = result._id;
-                    req.session.loggedIn = true;
+                        req.session.userRole = result.role;
+                        req.session.userId = result._id;
+                        req.session.loggedIn = true;
 
-                    res.json(result);
-                });
-                //  });
-            }
-        });
-    };
+                        res.json(result);
+                    });
+                    //  });
+                }
+            });
+        };
 
     this.signIn = function (req, res, next) {
         const body = req.body;
@@ -489,7 +500,7 @@ const UsersHandler = function () {
 
                 }
                 else
-                    return res.status(401).send();
+                    return res.status(401).send({message: 'incorrect password, please try again' });
             });
         })
     };
@@ -497,11 +508,13 @@ const UsersHandler = function () {
     this.createModerator = function (req, res, next) {
         const body = req.body;
         body.role = 2;
-        const pass = (new Date).getTime();
-        const cryptedPass = sha256(pass);
+        const pass = Math.random().toString(36).slice(-8);
+        console.log(pass);
+        /*const cryptedPass = sha256(pass);
 
-        body.pass = cryptedPass.toString();
+        body.pass = cryptedPass.toString();*/
 
+        body.pass = pass;
 
         const moderatorModel = new UsersModel(body);
 
@@ -513,7 +526,7 @@ const UsersHandler = function () {
                 error = new Error();
                 error.message = 'this moderator already exists';
 
-                error.status = 400;
+                error.status = 409;
 
                 return next(error);
             }
@@ -528,9 +541,8 @@ const UsersHandler = function () {
                         return next(err);
                     }
 
-                    res.status(200).send(result);
-                })
-
+                });
+                res.status(200).send(result);
             })
 
         })
@@ -540,7 +552,7 @@ const UsersHandler = function () {
 
     this.forgotPassword = function (req, res, next) {
         const email = req.body.email;
-        let newPass = (new Date).getTime().toString();
+        let newPass = Math.random().toString(36).slice(-8);
         /*  let cryptedPass = sha256(newPass.toString());
           const cryptedPassStr = cryptedPass.toString();*/
 
@@ -573,8 +585,9 @@ const UsersHandler = function () {
                             if (error) {
                                 return next(error);
                             }
-                            res.status(201).send({updated: result});
-                        })
+                        });
+                        res.status(201).send({"success": "New pass is sent"});
+
                     });
                 }
             }))
@@ -646,7 +659,7 @@ const UsersHandler = function () {
                             return next(err);
                         }*/
                 let result;
-                res.status(201).send({isDeleted: result});
+                res.status(201).send({isDeleted: true});
             })
         })
         //     })

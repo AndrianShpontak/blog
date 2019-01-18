@@ -4,11 +4,12 @@
   "description": "",
   "main": "server.js",
   "dependencies": {
+    "apidoc-plugin-schema": "^0.1.8",
     "bcrypt": "^3.0.3",
-    "bcryptjs": "^2.4.3",
     "body-parser": "^1.18.3",
     "connect-mongo": "^2.0.1",
     "crypto-js": "^3.1.9-1",
+    "docs": "0.0.0-37",
     "express": "^4.16.3",
     "express-paginate": "^1.0.0",
     "express-session": "^1.15.6",
@@ -19,10 +20,20 @@
     "nodemailer-express-handlebars": "^3.0.0",
     "nodemon": "^1.18.9"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "apidoc": "^0.17.7",
+    "apidoc-markdown": "^0.2.1",
+    "grunt-apidoc": "^0.11.0"
+  },
+  "apidoc": {
+    "name": "Blog",
+    "title": "Blog Docs"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon server.js"
+    "start": "nodemon server.js",
+    "docs": "apidoc -i routes -o docs ",
+    "postdocs": "open docs/index.html"
   },
   "repository": {
     "type": "git",

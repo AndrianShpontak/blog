@@ -1,3 +1,5 @@
 # Created by .ignore support plugin (hsz.mobi)
 .idea/blog.iml
 node_modules/
+/doc/
+/docs/

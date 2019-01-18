@@ -21,12 +21,14 @@ const UserSchema = new Schema({
     firstName: {
         type: String,
         index: true,
-        trim: true
+        trim: true,
+        required: true
     },
     lastName: {
         type: String,
         index: true,
-        trim: true
+        trim: true,
+        required:true
     },
     forgotPasswordToken: String
 }, {collection: 'users'});
@@ -49,6 +51,10 @@ UserSchema.pre('save', function (next) {
         });
     });
 });
+
+UserSchema.pre('update', function (next) {
+    
+})
 
 UserSchema.methods.comparePassword = function (candidatePass, cb) {
     bcrypt.compare(candidatePass, this.pass, function (err, isMatch) {
