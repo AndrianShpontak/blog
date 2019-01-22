@@ -618,6 +618,7 @@ router.post('/createUser', usersHandler.createUser);
  */
 
 router.patch('/:id', checkAuthentication, usersHandler.updateUser);
+router.patch('/changePassword/:id', checkAuthentication, usersHandler.changePassword);
 
 router.delete('/:id', usersHandler.deleteUser);
 
