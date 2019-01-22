@@ -13,6 +13,10 @@ const UserSchema = new Schema({
         trim: true,
         lowercase: true
     },
+    confirmed:{
+        type:DataTypes.BOOLEAN,
+        defaultValue: false
+    },
     pass: {
         type: String,
         match: /^(?=.*\d)(?=.*[a-zA-Z]).{8,}$/,
