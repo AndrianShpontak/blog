@@ -378,295 +378,293 @@ const UsersHandler = function () {
                     return res.status(201).send({updated: rest});
                 });
             });
-        }
-    }
-;
+        };
 
-this.changePassword = function (req, res, next) {
-    const body = req.body;
-    const id = req.params.id;
+        this.changePassword = function (req, res, next) {
+            const body = req.body;
+            const id = req.params.id;
 
-    if (id !== req.session.userId) {
-        return res.status(401).json('you cannot update')
-    }
-
-    UsersModel.findById(id, function (err, result) {
-        if (err) {
-            return next(err);
-        }
-        result.set({pass: body.newPass}).save(function (err, result) {
-            if (err) {
-                return next(err);
+            if (id !== req.session.userId) {
+                return res.status(401).json('you cannot update')
             }
-            let {pass, ...rest} = result.toObject();
 
-            return res.status(201).send({updated: rest});
-        });
-    })
-};
+            UsersModel.findById(id, function (err, result) {
+                if (err) {
+                    return next(err);
+                }
+                result.set({pass: body.newPass}).save(function (err, result) {
+                    if (err) {
+                        return next(err);
+                    }
+                    let {pass, ...rest} = result.toObject();
 
-this.signUp = function (req, res, next) {
-    const body = req.body;
-    const email = body.email;
+                    return res.status(201).send({updated: rest});
+                });
+            })
+        };
 
-    if (!body.role) {
-        body.role = '3'
-    }
-    if (body.role < "3") {
-        return next({status: 401, message: 'You can not sign up as admin or moderator'})
-    }
+        this.signUp = function (req, res, next) {
+            const body = req.body;
+            const email = body.email;
 
-    UsersModel.findOne({email: email}, function (error, user) {
-        if (error) {
-            return next(error);
-        }
+            if (!body.role) {
+                body.role = '3'
+            }
+            if (body.role < "3") {
+                return next({status: 401, message: 'You can not sign up as admin or moderator'})
+            }
 
-        if (user) {
-            return next({status: 409, message: 'This email is already used'})
-        }
+            UsersModel.findOne({email: email}, function (error, user) {
+                if (error) {
+                    return next(error);
+                }
 
-        if (!user) {
-            //  body.pass = sha256(body.pass);
+                if (user) {
+                    return next({status: 409, message: 'This email is already used'})
+                }
+
+                if (!user) {
+                    //  body.pass = sha256(body.pass);
+
+                    /* bcrypt.hash(body.pass, 10, function (err, hash) {
+                         if (err) {
+                             return next(err);
+                         }
+
+                         body.pass = hash;*/
+
+                    const userModel = new UsersModel(body);
+
+                    return userModel.save(function (err, result) {
+                        if (err) {
+                            return next(err);
+                        }
+
+                        req.session.userRole = result.role;
+                        req.session.userId = result._id;
+                        req.session.loggedIn = true;
+
+                        res.json(result);
+                    });
+                    //  });
+                }
+            });
+        };
+
+        this.signIn = function (req, res, next) {
+            const body = req.body;
+            const email = body.email;
+            const pass = body.pass;
+            /* let cryptedPass = sha256(pass);
+
+             cryptedPass = cryptedPass.toString();
+
+             UsersModel.findOne({email: email, pass: cryptedPass}, function (err, users) {
+                 if (err) {
+                     return next(err);
+                 }*/
+
 
             /* bcrypt.hash(body.pass, 10, function (err, hash) {
                  if (err) {
                      return next(err);
                  }
-
                  body.pass = hash;*/
 
-            const userModel = new UsersModel(body);
-
-            return userModel.save(function (err, result) {
+            UsersModel.findOne({email: email}, function (err, users) {
                 if (err) {
                     return next(err);
                 }
 
-                req.session.userRole = result.role;
-                req.session.userId = result._id;
-                req.session.loggedIn = true;
 
-                res.json(result);
-            });
-            //  });
-        }
-    });
-};
-
-this.signIn = function (req, res, next) {
-    const body = req.body;
-    const email = body.email;
-    const pass = body.pass;
-    /* let cryptedPass = sha256(pass);
-
-     cryptedPass = cryptedPass.toString();
-
-     UsersModel.findOne({email: email, pass: cryptedPass}, function (err, users) {
-         if (err) {
-             return next(err);
-         }*/
-
-
-    /* bcrypt.hash(body.pass, 10, function (err, hash) {
-         if (err) {
-             return next(err);
-         }
-         body.pass = hash;*/
-
-    UsersModel.findOne({email: email}, function (err, users) {
-        if (err) {
-            return next(err);
-        }
-
-
-        if (!users) {
-            req.session.destroy();
-            const error = new Error();
-            error.message = 'There is no user with this email/password';
-            error.status = 400;
-            return next(error)
-        }
-
-        users.comparePassword(pass, function (err, isMatch) {
-            if (isMatch) {
-                req.session.userRole = users.role;
-                req.session.userId = users._id;
-                req.session.loggedIn = true;
-                res.status(200).send(users)
-
-            }
-            else
-                return res.status(401).send({message: 'incorrect password, please try again'});
-        });
-    })
-};
-
-this.createModerator = function (req, res, next) {
-    const body = req.body;
-    body.role = 2;
-    const pass = Math.random().toString(36).slice(-8);
-    console.log(pass);
-    /*const cryptedPass = sha256(pass);
-
-    body.pass = cryptedPass.toString();*/
-
-    body.pass = pass;
-
-    const moderatorModel = new UsersModel(body);
-
-    UsersModel.find({email: body.email}).count(function (error, count) {
-        if (error) {
-            return next(error);
-        }
-        if (count) {
-            error = new Error();
-            error.message = 'this moderator already exists';
-
-            error.status = 409;
-
-            return next(error);
-        }
-
-        moderatorModel.save(function (err, result) {
-            if (err) {
-                return next(err);
-            }
-
-            sendEmail.sendMail(result.email, pass.toString(), function (error, result) {
-                if (error) {
-                    return next(err);
+                if (!users) {
+                    req.session.destroy();
+                    const error = new Error();
+                    error.message = 'There is no user with this email/password';
+                    error.status = 400;
+                    return next(error)
                 }
 
-            });
-            res.status(200).send(result);
-        })
+                users.comparePassword(pass, function (err, isMatch) {
+                    if (isMatch) {
+                        req.session.userRole = users.role;
+                        req.session.userId = users._id;
+                        req.session.loggedIn = true;
+                        res.status(200).send(users)
 
-    })
+                    }
+                    else
+                        return res.status(401).send({message: 'incorrect password, please try again'});
+                });
+            })
+        };
 
+        this.createModerator = function (req, res, next) {
+            const body = req.body;
+            body.role = 2;
+            const pass = Math.random().toString(36).slice(-8);
+            console.log(pass);
+            /*const cryptedPass = sha256(pass);
 
-};
+            body.pass = cryptedPass.toString();*/
 
-this.forgotPassword = function (req, res, next) {
-    const email = req.body.email;
-    let newPass = Math.random().toString(36).slice(-8);
-    /*  let cryptedPass = sha256(newPass.toString());
-      const cryptedPassStr = cryptedPass.toString();*/
+            body.pass = pass;
 
-    bcrypt.hash(newPass, 10, function (err, hash) {
-        if (err) {
-            return next(err);
-        }
-        const cryptedPass = hash;
+            const moderatorModel = new UsersModel(body);
 
-        UsersModel.findOne({email: email}, (function (error, users) {
-            if (error) {
-                return next(error)
-            }
-            if (!users) {
-                error = new Error();
-                error.message = 'There is no user with this email';
-                error.status = 400;
-                return next(error);
-            }
+            UsersModel.find({email: body.email}).count(function (error, count) {
+                if (error) {
+                    return next(error);
+                }
+                if (count) {
+                    error = new Error();
+                    error.message = 'this moderator already exists';
 
-            const id = users ? users.id : null;
-            if (id) {
-                UsersModel.findByIdAndUpdate(id, {pass: cryptedPass}, {new: true}, function (err, result) {
+                    error.status = 409;
+
+                    return next(error);
+                }
+
+                moderatorModel.save(function (err, result) {
                     if (err) {
                         return next(err);
                     }
 
-                    sendEmail.sendMail(email, newPass, function (error, res) {
-                        console.log('new pass is all ready');
+                    sendEmail.sendMail(result.email, pass.toString(), function (error, result) {
                         if (error) {
-                            return next(error);
+                            return next(err);
                         }
+
                     });
-                    res.status(201).send({"success": "New pass is sent"});
+                    res.status(200).send(result);
+                })
 
-                });
-            }
-        }))
-    })
-};
+            })
 
 
-this.getUserWithSubscribes = function (req, res, next) {
-    const userId = req.params.id;
-    const subscriberId = req.params.id;
-    if (!userId) {
-        return res.status(400).send({
-            error: {
-                userId: 'You must be logged in for this'
-            }
-        });
-    }
+        };
 
+        this.forgotPassword = function (req, res, next) {
+            const email = req.body.email;
+            let newPass = Math.random().toString(36).slice(-8);
+            /*  let cryptedPass = sha256(newPass.toString());
+              const cryptedPassStr = cryptedPass.toString();*/
 
-    UsersModel.aggregate([{
-        $match: {
-            _id: ObjectId(userId)
-        }
-    },
-        {
-            $lookup: {
-                from: "subscribers",
-                localField: "_id",
-                foreignField: "userId",
-                as: "subscribers"
-            }
-        },
-
-        {
-            $project: {
-                "subscriberId": 1,
-                "firstName": 1,
-                "lastName": 1
-
-            }
-        }
-
-    ], function (err, result) {
-        if (err) {
-            return next(err);
-        }
-        res.status(200).send({data: result})
-
-    })
-};
-
-this.deleteUser = function (req, res, next) {
-    const userId = req.params.id;
-
-    UsersModel.findByIdAndDelete(userId, function (err) {
-        if (err) {
-            return next(err);
-        }
-        PostModel.deleteMany({userId: userId}, function (err) {
-            if (err) {
-                return next(err);
-            }
-            /*LikeDislikeModel.findByIdAndDelete(id, likes, {new: true}, function (err, result) {
+            bcrypt.hash(newPass, 10, function (err, hash) {
                 if (err) {
                     return next(err);
                 }
-                SubscribtionModel.findByIdAndDelete(id, subscriberId, {new: true}, function (err, result) {
+                const cryptedPass = hash;
+
+                UsersModel.findOne({email: email}, (function (error, users) {
+                    if (error) {
+                        return next(error)
+                    }
+                    if (!users) {
+                        error = new Error();
+                        error.message = 'There is no user with this email';
+                        error.status = 400;
+                        return next(error);
+                    }
+
+                    const id = users ? users.id : null;
+                    if (id) {
+                        UsersModel.findByIdAndUpdate(id, {pass: cryptedPass}, {new: true}, function (err, result) {
+                            if (err) {
+                                return next(err);
+                            }
+
+                            sendEmail.sendMail(email, newPass, function (error, res) {
+                                console.log('new pass is all ready');
+                                if (error) {
+                                    return next(error);
+                                }
+                            });
+                            res.status(201).send({"success": "New pass is sent"});
+
+                        });
+                    }
+                }))
+            })
+        };
+
+
+        this.getUserWithSubscribes = function (req, res, next) {
+            const userId = req.params.id;
+            const subscriberId = req.params.id;
+            if (!userId) {
+                return res.status(400).send({
+                    error: {
+                        userId: 'You must be logged in for this'
+                    }
+                });
+            }
+
+
+            UsersModel.aggregate([{
+                $match: {
+                    _id: ObjectId(userId)
+                }
+            },
+                {
+                    $lookup: {
+                        from: "subscribers",
+                        localField: "_id",
+                        foreignField: "userId",
+                        as: "subscribers"
+                    }
+                },
+
+                {
+                    $project: {
+                        "subscriberId": 1,
+                        "firstName": 1,
+                        "lastName": 1
+
+                    }
+                }
+
+            ], function (err, result) {
+                if (err) {
+                    return next(err);
+                }
+                res.status(200).send({data: result})
+
+            })
+        };
+
+        this.deleteUser = function (req, res, next) {
+            const userId = req.params.id;
+
+            UsersModel.findByIdAndDelete(userId, function (err) {
+                if (err) {
+                    return next(err);
+                }
+                PostModel.deleteMany({userId: userId}, function (err) {
                     if (err) {
                         return next(err);
-                    }*/
-            let result;
-            res.status(201).send({isDeleted: true});
-        })
-    })
-    //     })
-    //  });
-};
+                    }
+                    /*LikeDislikeModel.findByIdAndDelete(id, likes, {new: true}, function (err, result) {
+                        if (err) {
+                            return next(err);
+                        }
+                        SubscribtionModel.findByIdAndDelete(id, subscriberId, {new: true}, function (err, result) {
+                            if (err) {
+                                return next(err);
+                            }*/
+                    let result;
+                    res.status(201).send({isDeleted: true});
+                })
+            })
+            //     })
+            //  });
+        };
 
 
-this.logout = function (req, res, next) {
-    res.status(200).send({logout: 'success'});
-}
-}
+        this.logout = function (req, res, next) {
+            res.status(200).send({logout: 'success'});
+        }
+    }
 ;
 
 module.exports = UsersHandler;

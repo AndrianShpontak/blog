@@ -563,7 +563,7 @@ router.post('/logout', destroySession, usersHandler.logout);
 router.post('/createUser', usersHandler.createUser);
 
 /**
- * @api {PATCH} /users/updateUser
+ * @api {PATCH} /users/:id Update user info
  *
  * @apiGroup User
  *
@@ -571,9 +571,21 @@ router.post('/createUser', usersHandler.createUser);
  *
  * @apiParam {String} [firstName] User`s firstName.
  * @apiParam {String} [lastName] User`s lastName.
- * @apiParam {String} [phone] User`s phone.
- * @apiParam {String} [oldPassword] User`s current password. (required in pair with password field)
- * @apiParam {String} [password] User`s password.
+ 
+ */
+
+router.patch('/:id', checkAuthentication, usersHandler.updateUser);
+
+/**
+ * @api {PATCH} /users/changePassword/:id Change User Password
+ *
+ * @apiGroup User
+ *
+ * @apiVersion 1.0.0
+ *
+
+ * @apiParam {String} [pass] User`s current password. (required in pair with password field)
+ * @apiParam {String} [newPass] User`s password.
  *
  * @apiParamExample {json} Request-Example:
  *
@@ -617,7 +629,6 @@ router.post('/createUser', usersHandler.createUser);
  *    }
  */
 
-router.patch('/:id', checkAuthentication, usersHandler.updateUser);
 router.patch('/changePassword/:id', checkAuthentication, usersHandler.changePassword);
 
 router.delete('/:id', usersHandler.deleteUser);
