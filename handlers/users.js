@@ -308,22 +308,15 @@ const UsersHandler = function () {
         this.createUser = function (req, res, next) {
             const body = req.body;
 
-
             const {
                 email,
                 pass,
                 role,
                 firstName,
-                lastName
+                lastName,
             } = body;
-            //  body.pass = sha256(pass);
 
-            /*bcrypt.hash(body.pass, 10, function (err, hash) {
-                if (err) {
-                    return next(err);
-                }
-
-                body.pass = hash;*/
+            temporaryToken = jwt.sign({lastName: body.lastName, email:body.email}, secret, {expiresIn:'24h'});
 
             if (!body.role) {
                 body.role = '3'
@@ -349,8 +342,18 @@ const UsersHandler = function () {
                         return next(err);
                     }
 
-                    return res.status(201).send(result);
-                });
+                    sendEmailHelpers.sendMailToConfirmEmail(email, link, function (err, res) {
+                        if (err) {
+                            return callback(err);
+                        }
+
+                        return res.json({
+                            status: 201,
+                            success: true,
+                            message: 'Profile is registered! Please check your email for activation.'
+                        });
+                    });
+                })
             });
         };
 
@@ -398,7 +401,8 @@ const UsersHandler = function () {
                     }
                     let {pass, ...rest} = result.toObject();
 
-                    return res.status(201).send({updated: rest});
+                    return result.json({status:201, success:true, message:'Profile is registered! Please check your email for activation.'});
+
                 });
             })
         };
@@ -406,6 +410,8 @@ const UsersHandler = function () {
         this.signUp = function (req, res, next) {
             const body = req.body;
             const email = body.email;
+
+            temporaryToken = jwt.sign({lastName: body.lastName, email:body.email}, secret, {expiresIn:'24h'});
 
             if (!body.role) {
                 body.role = '3'
@@ -419,20 +425,15 @@ const UsersHandler = function () {
                     return next(error);
                 }
 
+                if(!user.confirmed){
+                    throw new Error('Please, confirm your email to registration')
+                }
+
                 if (user) {
                     return next({status: 409, message: 'This email is already used'})
                 }
 
                 if (!user) {
-                    //  body.pass = sha256(body.pass);
-
-                    /* bcrypt.hash(body.pass, 10, function (err, hash) {
-                         if (err) {
-                             return next(err);
-                         }
-
-                         body.pass = hash;*/
-
                     const userModel = new UsersModel(body);
 
                     return userModel.save(function (err, result) {
@@ -444,9 +445,17 @@ const UsersHandler = function () {
                         req.session.userId = result._id;
                         req.session.loggedIn = true;
 
-                        res.json(result);
-                    });
-                    //  });
+                        sendEmailHelpers.sendMailToConfirmEmail(email, link, function (err, res) {
+                            if (err) {
+                                return callback(err);
+                            }
+
+                            res.json({
+                                success: true,
+                                message: 'Profile is registered! Please check your email for activation.'
+                            });
+                        });
+                    })
                 }
             });
         };
@@ -455,21 +464,6 @@ const UsersHandler = function () {
             const body = req.body;
             const email = body.email;
             const pass = body.pass;
-            /* let cryptedPass = sha256(pass);
-
-             cryptedPass = cryptedPass.toString();
-
-             UsersModel.findOne({email: email, pass: cryptedPass}, function (err, users) {
-                 if (err) {
-                     return next(err);
-                 }*/
-
-
-            /* bcrypt.hash(body.pass, 10, function (err, hash) {
-                 if (err) {
-                     return next(err);
-                 }
-                 body.pass = hash;*/
 
             UsersModel.findOne({email: email}, function (err, users) {
                 if (err) {
@@ -503,13 +497,7 @@ const UsersHandler = function () {
             const body = req.body;
             body.role = 2;
             const pass = Math.random().toString(36).slice(-8);
-            console.log(pass);
-            /*const cryptedPass = sha256(pass);
-
-            body.pass = cryptedPass.toString();*/
-
             body.pass = pass;
-
             const moderatorModel = new UsersModel(body);
 
             UsersModel.find({email: body.email}).count(function (error, count) {
