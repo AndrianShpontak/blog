@@ -13,9 +13,10 @@ const UserSchema = new Schema({
         trim: true,
         lowercase: true
     },
-    confirmed:{
-        type:DataTypes.BOOLEAN,
-        defaultValue: false
+    active:{
+        type:Boolean,
+        required:true,
+        default: false
     },
     pass: {
         type: String,
@@ -34,7 +35,10 @@ const UserSchema = new Schema({
         trim: true,
         required:true
     },
-    forgotPasswordToken: String
+    temporaryToken: {
+        type:String,
+        required:true
+    }
 }, {collection: 'users'});
 
 UserSchema.pre('save', function (next) {
