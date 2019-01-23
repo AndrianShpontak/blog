@@ -432,6 +432,7 @@ const PostsHandler = function () {
                 });
             })
     };
+
     this.getPostsWithLike = function (req, res, next) {
 
         const page = parseInt(req.query.page, 10);
