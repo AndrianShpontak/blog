@@ -562,6 +562,10 @@ router.post('/logout', destroySession, usersHandler.logout);
 
 router.post('/createUser', usersHandler.createUser);
 
+
+
+router.post('/verificateEmail', usersHandler.verificateEmail);
+
 /**
  * @api {PATCH} /users/:id Update user info
  *
@@ -571,7 +575,7 @@ router.post('/createUser', usersHandler.createUser);
  *
  * @apiParam {String} [firstName] User`s firstName.
  * @apiParam {String} [lastName] User`s lastName.
- 
+
  */
 
 router.patch('/:id', checkAuthentication, usersHandler.updateUser);
