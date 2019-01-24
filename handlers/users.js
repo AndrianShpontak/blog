@@ -8,6 +8,8 @@ const sendEmailHelpers = new SendEmail();
 const mongoose = require('mongoose');
 const ObjectId = mongoose.Types.ObjectId;
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const SECRET = 'secret';
 
 const sendEmail = new SendEmail();
 
@@ -316,8 +318,6 @@ const UsersHandler = function () {
                 lastName,
             } = body;
 
-            temporaryToken = jwt.sign({lastName: body.lastName, email:body.email}, secret, {expiresIn:'24h'});
-
             if (!body.role) {
                 body.role = '3'
             }
@@ -360,6 +360,9 @@ const UsersHandler = function () {
 
         this.updateUser = function (req, res, next) {
             const body = req.body;
+
+            const { role, ...bodyWithoutRole } = body;
+
             const id = req.params.id;
 
             if (id !== req.session.userId) {
@@ -371,14 +374,14 @@ const UsersHandler = function () {
                     return next(err);
                 }
 
-                return UsersModel.findByIdAndUpdate(id, body, {new: true}, function (err, result) {
+                return UsersModel.findByIdAndUpdate(id, bodyWithoutRole, {new: true}, function (err, result) {
                     if (err) {
                         return next(err);
                     }
 
                     let {pass, ...rest} = result.toObject();
 
-                    return res.status(201).send({updated: rest});
+                    return res.status(201).send({ updated: rest });
                 });
             });
         };
@@ -401,7 +404,11 @@ const UsersHandler = function () {
                     }
                     let {pass, ...rest} = result.toObject();
 
-                    return result.json({status:201, success:true, message:'Profile is registered! Please check your email for activation.'});
+                    return result.json({
+                        status: 201,
+                        success: true,
+                        message: 'Profile is registered! Please check your email for activation.'
+                    });
 
                 });
             })
@@ -411,7 +418,9 @@ const UsersHandler = function () {
             const body = req.body;
             const email = body.email;
 
-            temporaryToken = jwt.sign({lastName: body.lastName, email:body.email}, secret, {expiresIn:'24h'});
+            const verificationToken = jwt.sign({lastName: body.lastName, email: body.email}, SECRET, {expiresIn: '24h'});
+
+            body.verificationToken = verificationToken;
 
             if (!body.role) {
                 body.role = '3'
@@ -423,10 +432,6 @@ const UsersHandler = function () {
             UsersModel.findOne({email: email}, function (error, user) {
                 if (error) {
                     return next(error);
-                }
-
-                if(!user.confirmed){
-                    throw new Error('Please, confirm your email to registration')
                 }
 
                 if (user) {
@@ -445,18 +450,41 @@ const UsersHandler = function () {
                         req.session.userId = result._id;
                         req.session.loggedIn = true;
 
-                        sendEmailHelpers.sendMailToConfirmEmail(email, link, function (err, res) {
+                        sendEmailHelpers.sendMailToConfirmEmail(result, function (err, result) {
                             if (err) {
-                                return callback(err);
+                                return next(err);
                             }
 
-                            res.json({
+                           return res.json({
                                 success: true,
                                 message: 'Profile is registered! Please check your email for activation.'
                             });
                         });
                     })
                 }
+            });
+        };
+
+        this.verificateEmail = function (req,res,next) {
+            const body = req.body;
+            const email = body.email;
+            const verificationToken = req.body.verificationToken;
+            UsersModel.findOne({email: email}, function (err, user) {
+                if (err) {
+                    return next(err);
+                }
+                if(user.verificationToken === verificationToken){
+                    UsersModel.findOneAndUpdate({email:email}, {isActivated: true, $unset: { verificationToken: 1 }}, function (err,result) {
+                        if (err){
+                            return next(err);
+                        }
+                           return res.json(result);
+                    })
+                }
+               else
+                   return res.status(400).json({
+                    error: 'verification token is not correct'
+                });
             });
         };
 
