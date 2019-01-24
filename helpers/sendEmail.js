@@ -79,7 +79,7 @@ module.exports = function () {
         });
 
     };
-    this.sendMailToConfirmEmail = function (emailSentTo, link, callback) {
+    this.sendMailToConfirmEmail = function (user, callback) {
 
         let transporter = nodemailer.createTransport({
             host: 'smtp.gmail.com',
@@ -98,14 +98,11 @@ module.exports = function () {
 
         let mailOptions = {
             from: '"Blog Admin" <andrianashpontak@gmail.com>', // sender address
-            to: emailSentTo, // list of receivers
+            to: user.email, // list of receivers
             subject: 'Localhost Activation Link',
-            text: 'Hello' + User.firstName + User.lastName + ', thank you for registering at blog. Please click on the link below to complete your activation:http://localhost:3000/activate/' + User.temporaryToken,
-            html: 'Hello <strong>' + User.firstName + User.lastName + '</strong>,<br><br>Thank you for registering at blog.' +
-                'Please click on the link below to complete your activation:' +
-                '<br><br><a href="http://localhost:3000/' + User.temporaryToken + ' ">"http://localhost:3000/activate/</a>',
+            template: 'emailVerification',
             context: {
-                link: link
+                user: user
             }
         };
 
