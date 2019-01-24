@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
-const bcrypt = require('bcrypt'),
-    SALT_WORK_FACTOR = 10;
+const bcrypt = require('bcrypt');
+const SALT_WORK_FACTOR = 10;
 
 const UserSchema = new Schema({
     role: {type: String},
@@ -12,11 +12,6 @@ const UserSchema = new Schema({
         unique: true,
         trim: true,
         lowercase: true
-    },
-    active:{
-        type:Boolean,
-        required:true,
-        default: false
     },
     pass: {
         type: String,
@@ -35,9 +30,13 @@ const UserSchema = new Schema({
         trim: true,
         required:true
     },
-    temporaryToken: {
-        type:String,
-        required:true
+    isActivated:{
+        type:Boolean,
+        required:true,
+        default:false
+    },
+    verificationToken:{
+        type: String
     }
 }, {collection: 'users'});
 
@@ -68,14 +67,15 @@ UserSchema.pre('update', function (next) {
     }
 });
 
-UserSchema.methods.comparePassword = function (candidatePass, cb) {
-    bcrypt.compare(candidatePass, this.pass, function (err, isMatch) {
-        if (err)
-            return cb(err);
-        cb(undefined, isMatch)
-    });
+UserSchema.methods = {
+    comparePassword (candidatePass, cb) {
+        bcrypt.compare(candidatePass, this.pass, function (err, isMatch) {
+            if (err)
+                return cb(err);
+            cb(undefined, isMatch)
+        });
+    }
 };
-
 const UserModel = mongoose.model('User', UserSchema);
 
 module.exports = UserModel;
