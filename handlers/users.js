@@ -446,19 +446,20 @@ const UsersHandler = function () {
                             return next(err);
                         }
 
-                        req.session.userRole = result.role;
+                        /*req.session.userRole = result.role;
                         req.session.userId = result._id;
-                        req.session.loggedIn = true;
+                        req.session.loggedIn = true;*/
 
                         sendEmailHelpers.sendMailToConfirmEmail(result, function (err, result) {
                             if (err) {
                                 return next(err);
                             }
 
-                           return res.json({
+                            return res.redirect('/signIn')
+                           /*return res.json({
                                 success: true,
-                                message: 'Profile is registered! Please check your email for activation.'
-                            });
+                                message: 'Profile is registered! Please check your email for activation.'*/
+                            //});
                         });
                     })
                 }
