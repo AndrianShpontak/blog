@@ -59,13 +59,6 @@ UserSchema.pre('save', function (next) {
     });
 });
 
-UserSchema.pre('update', function (next) {
-    const user = this;
-
-    if(user.isModified('pass')){
-
-    }
-});
 
 UserSchema.methods = {
     comparePassword (candidatePass, cb) {
