@@ -441,14 +441,12 @@ const UsersHandler = function () {
                 if (!user) {
                     const userModel = new UsersModel(body);
 
+
+
                     return userModel.save(function (err, result) {
                         if (err) {
                             return next(err);
                         }
-
-                        /*req.session.userRole = result.role;
-                        req.session.userId = result._id;
-                        req.session.loggedIn = true;*/
 
                         sendEmailHelpers.sendMailToConfirmEmail(result, function (err, result) {
                             if (err) {
@@ -474,7 +472,8 @@ const UsersHandler = function () {
                     return next(err);
                 }
                 if(user.verificationToken === verificationToken){
-                    UsersModel.findOneAndUpdate({email:email}, {isActivated: true, $unset: { verificationToken: 1 }}, function (err,result) {
+                    UsersModel.findOneAndUpdate(
+                        {email:email},{$set: {isActivated: true} , $unset: { verificationToken: 1 }},{new: true}, function (err,result) {
                         if (err){
                             return next(err);
                         }
@@ -498,7 +497,6 @@ const UsersHandler = function () {
                     return next(err);
                 }
 
-
                 if (!users) {
                     req.session.destroy();
                     const error = new Error();
@@ -507,17 +505,21 @@ const UsersHandler = function () {
                     return next(error)
                 }
 
-                users.comparePassword(pass, function (err, isMatch) {
-                    if (isMatch) {
-                        req.session.userRole = users.role;
-                        req.session.userId = users._id;
-                        req.session.loggedIn = true;
-                        res.status(200).send(users)
+                if(users.isActivated) {
+                    users.comparePassword(pass, function (err, isMatch) {
+                        if (isMatch) {
+                            req.session.userRole = users.role;
+                            req.session.userId = users._id;
+                            req.session.loggedIn = true;
+                            res.status(200).send(users)
 
-                    }
-                    else
-                        return res.status(401).send({message: 'incorrect password, please try again'});
-                });
+                        }
+                        else
+                            return res.status(401).send({message: 'incorrect password, please try again'});
+                    });
+               }
+                else
+                    return res.status(401).send({message: 'First you must verificate your email!!!'});
             })
         };
 
