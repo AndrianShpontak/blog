@@ -455,11 +455,10 @@ const UsersHandler = function () {
                                 return next(err);
                             }
 
-                            return res.redirect('/signIn')
-                           /*return res.json({
+                           return res.json({
                                 success: true,
-                                message: 'Profile is registered! Please check your email for activation.'*/
-                            //});
+                                message: 'Profile is registered! Please check your email for activation.'
+                            });
                         });
                     })
                 }
