@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 const bcrypt = require('bcrypt');
 const SALT_WORK_FACTOR = 10;
+const ObjectId = mongoose.Schema.Types.ObjectId;
 
 const UserSchema = new Schema({
     role: {type: String},
@@ -37,7 +38,8 @@ const UserSchema = new Schema({
     },
     verificationToken:{
         type: String
-    }
+    },
+    rooms:[{type:ObjectId, ref: 'MessageRoom', required: true}]
 }, {collection: 'users'});
 
 UserSchema.pre('save', function (next) {
