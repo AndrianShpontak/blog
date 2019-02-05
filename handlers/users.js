@@ -450,7 +450,11 @@ const UsersHandler = function () {
 
                         sendEmailHelpers.sendMailToConfirmEmail(result, function (err, result) {
                             if (err) {
-                                return next(err);
+                                return result.json({
+                                    success: true,
+                                    message: 'Send mail ti verificate email'
+                                });
+
                             }
 
                            return res.json({
