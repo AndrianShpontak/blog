@@ -58,11 +58,10 @@ const PostsHandler = function () {
         const body = req.body;
         const userId = req.session.userId;
         const role = req.session.userRole;
-        let postModel;
 
         body.userId = userId;
 
-        postModel = new PostsModel(body);
+        const postModel = new PostsModel(body);
 
         if (role === '3') {
 
