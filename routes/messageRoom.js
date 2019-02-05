@@ -5,6 +5,6 @@ const messageRoomHandler = new MessageRoomHandler();
 
 router.post('/createRoom', messageRoomHandler.createOrGetChatRoom);
 router.post('/readMessage', messageRoomHandler.readMessage);
-router.post('/', messageRoomHandler.crea0000teMessage);
+router.post('/', messageRoomHandler.createMessage);
 
 module.exports = router;
